@@ -4,24 +4,48 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx src/lib/seed.ts",
+    "db:reset": "prisma migrate reset",
+    "postinstall": "prisma generate",
+    "netlify-build": "prisma generate && next build && npm run build:functions",
+    "build:functions": "netlify-lambda build src/functions",
+    "dev:functions": "netlify-lambda serve src/functions"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.10.0",
+    "@prisma/client": "^6.14.0",
+    "@stripe/stripe-js": "^7.8.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/uuid": "^10.0.0",
+    "clsx": "^2.1.1",
+    "next": "15.4.6",
+    "next-auth": "^4.24.11",
+    "prisma": "^6.14.0",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.4.6"
+    "stripe": "^18.4.0",
+    "tailwind-merge": "^3.3.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@netlify/functions": "^4.2.1",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "@eslint/eslintrc": "^3"
+    "netlify-lambda": "^2.0.16",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

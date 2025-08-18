@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  plan          String    @default("FREE") // FREE, SMART, GENIUS, ENTERPRISE
+  
+  // Stripe billing
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  
+  // Plan limits
+  qrCodeLimit   Int       @default(3)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Auth
+  accounts      Account[]
+  sessions      Session[]
+  
+  // QR Codes
+  qrCodes       QRCode[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model QRCode {
+  id           String   @id @default(cuid())
+  name         String
+  shortId      String   @unique // Short identifier for the QR URL
+  targetUrl    String   // Current target URL
+  
+  // Smart features
+  isActive     Boolean  @default(true)
+  enableAI     Boolean  @default(false)
+  
+  // Analytics
+  totalScans   Int      @default(0)
+  lastScanned  DateTime?
+  
+  // User relation
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Tracking
+  scans        Scan[]
+  variants     QRVariant[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("qr_codes")
+}
+
+model QRVariant {
+  id          String   @id @default(cuid())
+  qrCodeId    String
+  name        String
+  targetUrl   String
+  weight      Int      @default(50) // For A/B testing (0-100)
+  isActive    Boolean  @default(true)
+  
+  // Conditions for smart routing
+  conditions  String?    // Store routing conditions as JSON
+  
+  qrCode      QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  scans       Scan[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("qr_variants")
+}
+
+model Scan {
+  id           String     @id @default(cuid())
+  qrCodeId     String
+  variantId    String?    // Which variant was served
+  
+  // Analytics data
+  userAgent    String?
+  ipAddress    String?
+  country      String?
+  city         String?
+  device       String?    // mobile, desktop, tablet
+  os           String?
+  browser      String?
+  
+  // AI insights
+  userSegment  String?    // Detected user segment
+  
+  qrCode       QRCode     @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  variant      QRVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  
+  scannedAt    DateTime   @default(now())
+  
+  @@map("scans")
+}

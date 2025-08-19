@@ -89,7 +89,7 @@ export class QRGenerator {
           dark: options.color?.dark || '#000000',
           light: options.color?.light || '#FFFFFF',
         },
-        errorCorrectionLevel: (options.errorCorrectionLevel || 'M') as const,
+        errorCorrectionLevel: (options.errorCorrectionLevel || 'M') as 'L' | 'M' | 'Q' | 'H',
       };
 
       qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, qrOptions);

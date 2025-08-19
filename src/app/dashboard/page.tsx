@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRequireAuth } from '@/contexts/AuthContext';
-import { QR_PRESET_STYLES, QRPresetStyle } from '@/lib/qr';
+import { QR_PRESET_STYLES, QRPresetStyle, qrGenerator } from '@/lib/qr';
 
 interface QRCode {
   id: string;
@@ -35,6 +35,9 @@ export default function DashboardPage() {
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const planInfo = getPlanInfo();
 
@@ -68,6 +71,65 @@ export default function DashboardPage() {
     };
     return presets[preset] || {};
   };
+
+  // Generate QR preview with debouncing
+  const generatePreview = async () => {
+    if (!newQR.targetUrl || !newQR.name) {
+      setPreviewDataUrl(null);
+      return;
+    }
+
+    setIsGeneratingPreview(true);
+    
+    try {
+      const previewUrl = newQR.targetUrl.startsWith('http') 
+        ? newQR.targetUrl 
+        : `https://${newQR.targetUrl}`;
+      
+      const qrOptions = {
+        size: Math.min(newQR.size, 200), // Limit preview size
+        style: newQR.style !== 'classic' ? {
+          ...getStylePreset(newQR.style),
+          dotsColor: newQR.customColor
+        } : undefined
+      };
+
+      const qrData = await qrGenerator.generateQRCode(
+        newQR.name, 
+        previewUrl, 
+        qrOptions
+      );
+      
+      setPreviewDataUrl(qrData.qrCodeDataUrl);
+    } catch (error) {
+      console.error('Preview generation failed:', error);
+      setPreviewDataUrl(null);
+    }
+    
+    setIsGeneratingPreview(false);
+  };
+
+  // Debounced preview generation
+  const debouncedPreview = () => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    
+    previewTimeoutRef.current = setTimeout(generatePreview, 500);
+  };
+
+  // Generate preview when settings change
+  useEffect(() => {
+    if (showCreateForm && (newQR.targetUrl || newQR.name)) {
+      debouncedPreview();
+    }
+    
+    return () => {
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+    };
+  }, [newQR.targetUrl, newQR.name, newQR.style, newQR.customColor, newQR.size, showCreateForm]);
 
   useEffect(() => {
     // Add dependency on user to refetch when user changes
@@ -163,6 +225,7 @@ export default function DashboardPage() {
         });
         setShowCreateForm(false);
         setShowAdvanced(false);
+        setPreviewDataUrl(null);
         
         // Update user QR count
         incrementQRCount();
@@ -476,11 +539,17 @@ export default function DashboardPage() {
       {/* Create QR Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl my-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">🎨 Create New QR Code</h2>
               <button
-                onClick={() => setShowCreateForm(false)}
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setPreviewDataUrl(null);
+                  if (previewTimeoutRef.current) {
+                    clearTimeout(previewTimeoutRef.current);
+                  }
+                }}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -488,7 +557,7 @@ export default function DashboardPage() {
             </div>
             
             <form onSubmit={createQRCode} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
                 {/* Left Column - Basic Info */}
                 <div className="space-y-4">
                   <div>
@@ -601,6 +670,59 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Preview Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      👁️ Vista Previa
+                    </label>
+                    <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center min-h-[200px]">
+                      {isGeneratingPreview ? (
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                          <p className="text-xs text-gray-500">Generando...</p>
+                        </div>
+                      ) : previewDataUrl ? (
+                        <div className="text-center">
+                          <img 
+                            src={previewDataUrl} 
+                            alt="QR Preview" 
+                            className="mx-auto rounded-lg shadow-sm"
+                            style={{ maxWidth: '150px', maxHeight: '150px' }}
+                          />
+                          <p className="text-xs text-gray-500 mt-2">
+                            {newQR.size}px • {newQR.style}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-400">
+                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <span className="text-2xl">📱</span>
+                          </div>
+                          <p className="text-xs">
+                            Ingresa nombre y URL para ver preview
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {previewDataUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.download = `${newQR.name.replace(/\s+/g, '_')}_preview.png`;
+                          link.href = previewDataUrl;
+                          link.click();
+                        }}
+                        className="w-full mt-2 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        💾 Descargar Preview
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div className="flex gap-3 pt-6 border-t">
@@ -609,6 +731,10 @@ export default function DashboardPage() {
                   onClick={() => {
                     setShowCreateForm(false);
                     setShowAdvanced(false);
+                    setPreviewDataUrl(null);
+                    if (previewTimeoutRef.current) {
+                      clearTimeout(previewTimeoutRef.current);
+                    }
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 >

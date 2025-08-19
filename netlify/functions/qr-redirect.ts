@@ -26,7 +26,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       return {
         statusCode: 302,
         headers: {
-          Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
+          Location: `${process.env.URL || 'https://smartqr.es'}/lander`,
         },
       };
     }
@@ -41,7 +41,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       return {
         statusCode: 302,
         headers: {
-          Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
+          Location: `${process.env.URL || 'https://smartqr.es'}/lander`,
         },
       };
     }

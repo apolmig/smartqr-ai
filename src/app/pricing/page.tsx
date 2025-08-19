@@ -29,7 +29,7 @@ export default function PricingPage() {
       limitations: [
         'No AI features',
         'Basic templates only',
-        'SmartQR.ai branding'
+        'SmartQR branding'
       ]
     },
     {
@@ -132,7 +132,7 @@ export default function PricingPage() {
                 <span className="text-white font-bold text-xl">S</span>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">SmartQR.ai</span>
+                <span className="text-xl font-bold text-gray-900">SmartQR</span>
                 <div className="text-xs text-gray-500">Pricing</div>
               </div>
             </Link>
@@ -336,7 +336,7 @@ export default function PricingPage() {
         <div className="mt-20 text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white">
           <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of businesses using SmartQR.ai to boost their conversions.
+            Join thousands of businesses using SmartQR to boost their conversions.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 

@@ -52,7 +52,7 @@ export default function LoginPage() {
                 <span className="text-white font-bold text-xl">S</span>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">SmartQR.ai</span>
+                <span className="text-xl font-bold text-gray-900">SmartQR</span>
                 <div className="text-xs text-gray-500">QR Codes That Learn</div>
               </div>
             </Link>
@@ -73,7 +73,7 @@ export default function LoginPage() {
               Welcome Back
             </h2>
             <p className="text-gray-600">
-              Sign in to your SmartQR.ai account
+              Sign in to your SmartQR account
             </p>
           </div>
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
               </button>
 
               <div className="text-center">
-                <span className="text-gray-600">New to SmartQR.ai? </span>
+                <span className="text-gray-600">New to SmartQR? </span>
                 <Link href="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
                   Create free account
                 </Link>

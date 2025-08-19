@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 
@@ -34,8 +35,8 @@ export default function Home() {
                 <span className="text-white font-bold text-xl">S</span>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">SmartQR.ai</span>
-                <div className="text-xs text-gray-500">QR Codes That Learn</div>
+                <Image src="/logo.svg" alt="SmartQR" width={120} height={32} className="h-8 w-auto" />
+                <div className="text-xs text-gray-500">Códigos QR Inteligentes</div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -196,7 +197,7 @@ export default function Home() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">🎥 SmartQR.ai Demo</h2>
+              <h2 className="text-2xl font-bold">🎥 SmartQR Demo</h2>
               <button
                 onClick={() => setShowDemo(false)}
                 className="text-gray-500 hover:text-gray-700"

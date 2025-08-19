@@ -140,7 +140,7 @@ export default function QRDetailPage() {
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">S</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">SmartQR.ai</span>
+                <span className="text-xl font-bold text-gray-900">SmartQR</span>
               </div>
             </div>
           </div>

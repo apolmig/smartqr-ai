@@ -1,0 +1,56 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="qrGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main QR-like grid structure -->
+  <rect x="30" y="30" width="140" height="140" rx="20" fill="url(#qrGradient)" />
+  
+  <!-- QR Code pattern elements -->
+  <!-- Top-left corner -->
+  <rect x="45" y="45" width="35" height="35" rx="5" fill="white" />
+  <rect x="55" y="55" width="15" height="15" rx="2" fill="url(#qrGradient)" />
+  
+  <!-- Top-right corner -->
+  <rect x="120" y="45" width="35" height="35" rx="5" fill="white" />
+  <rect x="130" y="55" width="15" height="15" rx="2" fill="url(#qrGradient)" />
+  
+  <!-- Bottom-left corner -->
+  <rect x="45" y="120" width="35" height="35" rx="5" fill="white" />
+  <rect x="55" y="130" width="15" height="15" rx="2" fill="url(#qrGradient)" />
+  
+  <!-- Central pattern -->
+  <rect x="85" y="85" width="30" height="30" rx="4" fill="white" />
+  <rect x="92" y="92" width="16" height="16" rx="2" fill="url(#qrGradient)" />
+  
+  <!-- Scattered QR elements -->
+  <rect x="45" y="95" width="8" height="8" rx="1" fill="white" />
+  <rect x="45" y="105" width="8" height="8" rx="1" fill="white" />
+  <rect x="60" y="95" width="8" height="8" rx="1" fill="white" />
+  
+  <rect x="120" y="95" width="8" height="8" rx="1" fill="white" />
+  <rect x="135" y="95" width="8" height="8" rx="1" fill="white" />
+  <rect x="147" y="95" width="8" height="8" rx="1" fill="white" />
+  
+  <rect x="85" y="45" width="8" height="8" rx="1" fill="white" />
+  <rect x="95" y="45" width="8" height="8" rx="1" fill="white" />
+  <rect x="105" y="45" width="8" height="8" rx="1" fill="white" />
+  
+  <!-- AI Brain spark effect -->
+  <circle cx="160" cy="60" r="12" fill="url(#sparkGradient)" />
+  <path d="M160 52 L164 60 L160 68 L156 60 Z" fill="white" />
+  <path d="M152 60 L160 56 L168 60 L160 64 Z" fill="white" />
+  
+  <!-- Smart indicator dots -->
+  <circle cx="175" cy="45" r="3" fill="url(#sparkGradient)" opacity="0.8" />
+  <circle cx="185" cy="35" r="2" fill="url(#sparkGradient)" opacity="0.6" />
+  <circle cx="180" cy="55" r="2.5" fill="url(#sparkGradient)" opacity="0.7" />
+</svg>

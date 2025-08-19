@@ -213,7 +213,7 @@ export default function DashboardPage() {
                 <span className="text-white font-bold text-xl">S</span>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">SmartQR.ai</span>
+                <span className="text-xl font-bold text-gray-900">SmartQR</span>
                 <div className="text-xs text-gray-500">Dashboard</div>
               </div>
             </Link>

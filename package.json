@@ -22,11 +22,11 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.14.0",
     "@stripe/stripe-js": "^7.8.0",
-    "@types/qrcode": "^1.5.5",
-    "@types/uuid": "^10.0.0",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "clsx": "^2.1.1",
     "next": "15.4.6",
     "next-auth": "^4.24.11",
@@ -46,6 +46,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "netlify-lambda": "^2.0.16"
+    "netlify-lambda": "^2.0.16",
+    "sharp": "^0.34.3"
   }
 }

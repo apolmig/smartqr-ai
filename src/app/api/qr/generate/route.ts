@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       qrCode: {
         ...qrCode,
         qrCodeDataUrl: qrCode.qrCodeDataUrl || qrData.qrCodeDataUrl,
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/r/${qrCode.shortId}`,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smartqr.es'}/r/${qrCode.shortId}`,
         scanCount: qrCode.totalScans || 0,
         createdAt: qrCode.createdAt instanceof Date ? qrCode.createdAt.toISOString() : qrCode.createdAt,
       }
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       success: true,
       qrCodes: await Promise.all(qrCodes.map(async (qr) => {
         // Regenerate QR code image for each QR
-        const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/r/${qr.shortId}`;
+        const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smartqr.es'}/r/${qr.shortId}`;
         let qrCodeDataUrl = '';
         
         try {

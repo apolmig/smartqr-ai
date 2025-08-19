@@ -42,7 +42,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
           success: true,
           qrCodes: await Promise.all(qrCodes.map(async (qr) => {
             // Regenerate QR code image for each QR
-            const redirectUrl = `${process.env.URL || 'https://smartqr-ai.netlify.app'}/r/${qr.shortId}`;
+            const redirectUrl = `${process.env.URL || 'https://smartqr.es'}/r/${qr.shortId}`;
             let qrCodeDataUrl = '';
             
             try {
@@ -182,7 +182,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
           qrCode: {
             ...qrCode,
             qrCodeDataUrl: qrCode.qrCodeDataUrl || qrData.qrCodeDataUrl,
-            redirectUrl: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/r/${qrCode.shortId}`,
+            redirectUrl: `${process.env.URL || 'https://smartqr.es'}/r/${qrCode.shortId}`,
             scanCount: qrCode.totalScans || 0,
             createdAt: qrCode.createdAt instanceof Date ? qrCode.createdAt.toISOString() : qrCode.createdAt,
           }

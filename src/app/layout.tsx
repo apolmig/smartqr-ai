@@ -14,8 +14,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SmartQR.ai - QR Codes That Learn & Adapt",
-  description: "Create dynamic QR codes that get smarter with every scan. Personalize experiences automatically using AI and boost your conversion rates.",
+  title: "SmartQR - Códigos QR Inteligentes",
+  description: "Crea códigos QR dinámicos que aprenden con cada escaneado. Personaliza experiencias automáticamente usando IA y mejora tus conversiones.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' }
+    ],
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.ico'
+  },
+  metadataBase: new URL('https://smartqr.es'),
+  alternates: {
+    canonical: 'https://smartqr.es'
+  }
 };
 
 export default function RootLayout({

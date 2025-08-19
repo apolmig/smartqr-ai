@@ -37,27 +37,58 @@ export async function POST(request: NextRequest) {
     const qrData = await qrGenerator.generateQRCode(name, formattedUrl);
     console.log('QR data generated:', { ...qrData, qrCodeDataUrl: '[DATA_URL]' });
 
-    // Create simple QR code object (skip database for now)
-    const qrCode = {
-      id: qrData.id,
-      shortId: qrData.shortId,
-      name: qrData.name,
-      targetUrl: qrData.targetUrl,
-      isActive: true,
-      enableAI: enableAI,
-      totalScans: 0,
-      createdAt: new Date(),
-    };
+    // Try to save to database, but fallback to in-memory if it fails
+    let qrCode;
+    try {
+      console.log('Saving QR code to database...');
+      
+      // Ensure user exists first
+      const finalUserId = userId || 'anonymous';
+      await DatabaseService.ensureUser(finalUserId, `User ${finalUserId}`);
+      
+      const dbQRCode = await DatabaseService.createQRCode(finalUserId, {
+        name: qrData.name,
+        targetUrl: qrData.targetUrl,
+        enableAI: enableAI,
+      });
+      console.log('QR code saved to database:', dbQRCode.id);
+      
+      // Use database QR code but keep generated QR image
+      qrCode = {
+        id: dbQRCode.id,
+        shortId: dbQRCode.shortId,
+        name: dbQRCode.name,
+        targetUrl: dbQRCode.targetUrl,
+        isActive: dbQRCode.isActive,
+        enableAI: dbQRCode.enableAI,
+        totalScans: dbQRCode.totalScans,
+        createdAt: dbQRCode.createdAt,
+        qrCodeDataUrl: qrData.qrCodeDataUrl, // Use generated QR image
+      };
+    } catch (dbError) {
+      console.warn('Database save failed, using in-memory data:', dbError);
+      // Fallback to in-memory QR data
+      qrCode = {
+        id: qrData.id,
+        shortId: qrData.shortId,
+        name: qrData.name,
+        targetUrl: qrData.targetUrl,
+        isActive: true,
+        enableAI: enableAI,
+        totalScans: 0,
+        createdAt: new Date(),
+      };
+    }
 
     console.log('Returning success response');
     return NextResponse.json({
       success: true,
       qrCode: {
         ...qrCode,
-        qrCodeDataUrl: qrData.qrCodeDataUrl,
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/r/${qrData.shortId}`,
-        scanCount: 0,
-        createdAt: qrCode.createdAt.toISOString(),
+        qrCodeDataUrl: qrCode.qrCodeDataUrl || qrData.qrCodeDataUrl,
+        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/r/${qrCode.shortId}`,
+        scanCount: qrCode.totalScans || 0,
+        createdAt: qrCode.createdAt instanceof Date ? qrCode.createdAt.toISOString() : qrCode.createdAt,
       }
     });
 

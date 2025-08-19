@@ -2,6 +2,33 @@ import prisma, { getPlanLimits } from './prisma';
 import { generateShortId } from './utils';
 
 export class DatabaseService {
+  // User operations
+  static async ensureUser(userId: string, name: string, email?: string) {
+    try {
+      // Try to find existing user
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (existingUser) {
+        return existingUser;
+      }
+
+      // Create new user if not found
+      return await prisma.user.create({
+        data: {
+          id: userId,
+          name,
+          email: email || `${userId}@demo.local`,
+          plan: 'FREE',
+        },
+      });
+    } catch (error) {
+      console.warn('Failed to ensure user, using fallback:', error);
+      throw error;
+    }
+  }
+
   // QR Code operations
   static async createQRCode(userId: string, data: {
     name: string;

@@ -37,7 +37,12 @@ export default function DashboardPage() {
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/qr/generate?userId=${user.id}`);
+      // Use Netlify functions in production, local API in development
+      const endpoint = process.env.NODE_ENV === 'production' 
+        ? `/.netlify/functions/qr-generate?userId=${user.id}`
+        : `/api/qr/generate?userId=${user.id}`;
+      
+      const response = await fetch(endpoint);
       const data = await response.json();
       if (data.success) {
         setQrCodes(data.qrCodes);
@@ -62,7 +67,12 @@ export default function DashboardPage() {
     setIsCreating(true);
 
     try {
-      const response = await fetch('/api/qr/generate', {
+      // Use Netlify functions in production, local API in development
+      const endpoint = process.env.NODE_ENV === 'production' 
+        ? '/.netlify/functions/qr-generate'
+        : '/api/qr/generate';
+        
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -109,6 +119,12 @@ export default function DashboardPage() {
   };
 
   const toggleAI = async (qrCode: QRCode) => {
+    // Temporarily disable AI toggle in production until we create the Netlify function
+    if (process.env.NODE_ENV === 'production') {
+      alert('AI toggle feature coming soon in production!');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/qr/${qrCode.id}`, {
         method: 'PUT',
@@ -134,6 +150,12 @@ export default function DashboardPage() {
   };
 
   const seedTestData = async () => {
+    // Temporarily disable seed function in production until we create the Netlify function
+    if (process.env.NODE_ENV === 'production') {
+      alert('Demo data feature coming soon in production!');
+      return;
+    }
+    
     try {
       const response = await fetch('/api/seed', {
         method: 'POST'

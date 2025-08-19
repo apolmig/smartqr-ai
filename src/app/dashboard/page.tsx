@@ -328,6 +328,10 @@ export default function DashboardPage() {
           userId: user?.id,
           qrOptions: {
             size: newQR.size,
+            color: {
+              dark: newQR.customColor,
+              light: '#FFFFFF'
+            },
             style: newQR.style !== 'classic' ? {
               ...getStylePreset(newQR.style),
               dotsColor: newQR.customColor

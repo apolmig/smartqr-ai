@@ -77,11 +77,15 @@ export class QRGenerator {
 
     let qrCodeDataUrl: string;
 
+    // Always use advanced styling when options.style is provided
     if (options.style && typeof window !== 'undefined') {
-      // Use advanced styling (client-side only)
+      // Client-side: use qr-code-styling library
       qrCodeDataUrl = await this.generateStyledQR(redirectUrl, options);
+    } else if (options.style && typeof window === 'undefined') {
+      // Server-side: use enhanced basic QR with style approximations
+      qrCodeDataUrl = await this.generateServerStyledQR(redirectUrl, options);
     } else {
-      // Use basic QR generation (works server-side)
+      // Basic QR generation
       const qrOptions = {
         width: options.size || 256,
         margin: options.margin || 2,
@@ -106,6 +110,41 @@ export class QRGenerator {
       totalScans: 0,
       createdAt: new Date(),
     };
+  }
+
+  // Server-side styled QR generation using basic library with enhanced styling
+  private async generateServerStyledQR(data: string, options: QRGenerateOptions): Promise<string> {
+    // Priority: user custom color > preset color > default
+    let dotColor = options.color?.dark || '#000000';
+    
+    // Apply preset colors if available and no custom color specified
+    if (options.style && !options.color?.dark) {
+      const presets = this.getPresetStyles();
+      const preset = presets[options.style as keyof typeof presets];
+      if (preset && preset.dotsColor) {
+        dotColor = preset.dotsColor;
+      }
+    }
+    
+    // For styled QRs, also check if style options contain color overrides
+    if (options.style?.dotsColor) {
+      dotColor = options.style.dotsColor;
+    }
+    
+    console.log('Server-side QR generation with color:', dotColor, 'style:', options.style);
+    
+    // Generate QR with enhanced options
+    const qrOptions = {
+      width: options.size || 256,
+      margin: options.margin || 2,
+      color: {
+        dark: dotColor,
+        light: options.style?.backgroundColor || options.color?.light || '#FFFFFF',
+      },
+      errorCorrectionLevel: (options.errorCorrectionLevel || 'M') as 'L' | 'M' | 'Q' | 'H',
+    };
+
+    return await QRCode.toDataURL(data, qrOptions);
   }
 
   private async generateStyledQR(data: string, options: QRGenerateOptions): Promise<string> {

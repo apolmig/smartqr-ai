@@ -419,21 +419,49 @@ export default function DashboardPage() {
         ? `/.netlify/functions/qr-delete?id=${qrCode.id}&userId=${user?.id}`
         : `/api/qr/${qrCode.id}/delete?userId=${user?.id}`;
 
+      console.log('Attempting to delete QR code:', {
+        qrCodeId: qrCode.id,
+        userId: user?.id,
+        endpoint,
+        environment: process.env.NODE_ENV
+      });
+
       const response = await fetch(endpoint, {
         method: 'DELETE',
       });
 
+      console.log('Delete response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (!response.ok) {
+        console.error('Delete request failed:', response.status, response.statusText);
+        alert(`Error al eliminar el QR code: ${response.status} ${response.statusText}`);
+        return;
+      }
+
       const data = await response.json();
+      console.log('Delete response data:', data);
+      
       if (data.success) {
         // Remove from local state
         setQrCodes(qrCodes.filter(qr => qr.id !== qrCode.id));
         alert('QR code eliminado correctamente');
+        
+        // Verify deletion after a short delay to catch any issues
+        setTimeout(async () => {
+          console.log('Verifying deletion by refetching QR codes...');
+          await fetchQRCodes();
+        }, 2000);
       } else {
+        console.error('Delete failed with success=false:', data.error);
         alert(data.error || 'Error al eliminar el QR code');
       }
     } catch (error) {
       console.error('Failed to delete QR code:', error);
-      alert('Error al eliminar el QR code');
+      alert('Error de red al eliminar el QR code');
     }
   };
 

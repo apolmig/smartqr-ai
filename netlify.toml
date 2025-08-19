@@ -12,10 +12,11 @@
   to = "/.netlify/functions/qr-generate"
   status = 200
 
-[[redirects]]
-  from = "/api/qr/*/delete"
-  to = "/.netlify/functions/qr-delete"
-  status = 200
+# QR delete function - no redirect needed as frontend calls /.netlify/functions/qr-delete directly
+# [[redirects]]
+#   from = "/api/qr/*/delete"  
+#   to = "/.netlify/functions/qr-delete"
+#   status = 200
 
 [[redirects]]
   from = "/api/*"

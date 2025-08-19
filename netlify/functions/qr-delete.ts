@@ -2,6 +2,13 @@ import { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 import { DatabaseService } from '../../src/lib/db-service';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  console.log('QR Delete function called:', {
+    httpMethod: event.httpMethod,
+    queryStringParameters: event.queryStringParameters,
+    path: event.path,
+    headers: event.headers
+  });
+
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -17,6 +24,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
   // Only handle DELETE requests
   if (event.httpMethod !== 'DELETE') {
+    console.log('Invalid method received:', event.httpMethod);
     return {
       statusCode: 405,
       headers: {
@@ -30,7 +38,10 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     const qrCodeId = event.queryStringParameters?.id;
     const userId = event.queryStringParameters?.userId;
 
+    console.log('Extracted parameters:', { qrCodeId, userId });
+
     if (!qrCodeId || !userId) {
+      console.log('Missing required parameters');
       return {
         statusCode: 400,
         headers: {
@@ -40,7 +51,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       };
     }
 
-    console.log('Deleting QR code:', qrCodeId, 'for user:', userId);
+    console.log('Attempting to delete QR code:', qrCodeId, 'for user:', userId);
 
     await DatabaseService.deleteQRCode(qrCodeId, userId);
 

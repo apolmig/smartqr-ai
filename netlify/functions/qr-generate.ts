@@ -92,7 +92,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       const body = JSON.parse(event.body);
       console.log('Request body:', body);
       
-      const { name, targetUrl, enableAI = false, userId } = body;
+      const { name, targetUrl, enableAI = false, userId, qrOptions } = body;
 
       // Validation
       if (!name || !targetUrl) {
@@ -123,8 +123,8 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       console.log('Formatted URL:', formattedUrl);
 
       // Generate QR code
-      console.log('Generating QR code...');
-      const qrData = await qrGenerator.generateQRCode(name, formattedUrl);
+      console.log('Generating QR code...', qrOptions ? 'with custom styling' : 'with default styling');
+      const qrData = await qrGenerator.generateQRCode(name, formattedUrl, qrOptions);
       console.log('QR data generated:', { ...qrData, qrCodeDataUrl: '[DATA_URL]' });
 
       // Try to save to database, but fallback to in-memory if it fails

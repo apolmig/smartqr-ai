@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import { QR_PRESET_STYLES, QRPresetStyle } from '@/lib/qr';
 
 interface QRCode {
   id: string;
@@ -24,10 +25,49 @@ export default function DashboardPage() {
   const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newQR, setNewQR] = useState({ name: '', targetUrl: '', enableAI: false });
+  const [newQR, setNewQR] = useState({ 
+    name: '', 
+    targetUrl: '', 
+    enableAI: false,
+    style: 'classic' as QRPresetStyle,
+    customColor: '#3B82F6',
+    size: 256
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const planInfo = getPlanInfo();
+
+  // Helper function to get style preset
+  const getStylePreset = (preset: QRPresetStyle) => {
+    const presets = {
+      classic: {},
+      rounded: { dotType: 'rounded', cornerSquareType: 'extra-rounded' },
+      dots: { dotType: 'dots', cornerSquareType: 'dot' },
+      classy: { dotType: 'classy-rounded', cornerSquareType: 'extra-rounded' },
+      gradient_blue: { 
+        dotType: 'rounded', 
+        cornerSquareType: 'extra-rounded',
+        dotsColor: '#3B82F6',
+        cornerSquareColor: '#1E40AF',
+        backgroundColor: '#EFF6FF'
+      },
+      gradient_purple: { 
+        dotType: 'classy-rounded', 
+        cornerSquareType: 'extra-rounded',
+        dotsColor: '#8B5CF6',
+        cornerSquareColor: '#6D28D9',
+        backgroundColor: '#F3E8FF'
+      },
+      smartqr_brand: { 
+        dotType: 'rounded',
+        cornerSquareType: 'extra-rounded',
+        dotsColor: '#3B82F6',
+        cornerSquareColor: '#8B5CF6'
+      }
+    };
+    return presets[preset] || {};
+  };
 
   useEffect(() => {
     // Add dependency on user to refetch when user changes
@@ -96,16 +136,33 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newQR,
-          userId: user?.id
+          name: newQR.name,
+          targetUrl: newQR.targetUrl,
+          enableAI: newQR.enableAI,
+          userId: user?.id,
+          qrOptions: {
+            size: newQR.size,
+            style: newQR.style !== 'classic' ? {
+              ...getStylePreset(newQR.style),
+              dotsColor: newQR.customColor
+            } : undefined
+          }
         })
       });
 
       const data = await response.json();
       if (data.success) {
         setQrCodes([data.qrCode, ...qrCodes]);
-        setNewQR({ name: '', targetUrl: '', enableAI: false });
+        setNewQR({ 
+          name: '', 
+          targetUrl: '', 
+          enableAI: false,
+          style: 'classic' as QRPresetStyle,
+          customColor: '#3B82F6',
+          size: 256
+        });
         setShowCreateForm(false);
+        setShowAdvanced(false);
         
         // Update user QR count
         incrementQRCount();
@@ -418,65 +475,151 @@ export default function DashboardPage() {
 
       {/* Create QR Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold mb-4">Create New QR Code</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">🎨 Create New QR Code</h2>
+              <button
+                onClick={() => setShowCreateForm(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
             <form onSubmit={createQRCode} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  QR Code Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newQR.name}
-                  onChange={(e) => setNewQR({...newQR, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
-                  placeholder="e.g., Website Homepage"
-                />
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Left Column - Basic Info */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      QR Code Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newQR.name}
+                      onChange={(e) => setNewQR({...newQR, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                      placeholder="e.g., Website Homepage"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Target URL
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={newQR.targetUrl}
+                      onChange={(e) => setNewQR({...newQR, targetUrl: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="enableAI"
+                      type="checkbox"
+                      checked={newQR.enableAI}
+                      onChange={(e) => setNewQR({...newQR, enableAI: e.target.checked})}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="enableAI" className="ml-2 block text-sm text-gray-900">
+                      🧠 Enable AI Smart Routing
+                    </label>
+                  </div>
+                </div>
+
+                {/* Right Column - Design Options */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🎨 QR Style
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries({
+                        classic: 'Clásico',
+                        rounded: 'Redondeado', 
+                        dots: 'Puntos',
+                        classy: 'Elegante',
+                        gradient_blue: 'Azul',
+                        smartqr_brand: 'SmartQR'
+                      }).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setNewQR({...newQR, style: value as QRPresetStyle})}
+                          className={`px-3 py-2 text-xs rounded-md border transition-colors ${
+                            newQR.style === value
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🎯 Size
+                    </label>
+                    <select
+                      value={newQR.size}
+                      onChange={(e) => setNewQR({...newQR, size: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    >
+                      <option value={128}>Pequeño (128px)</option>
+                      <option value={256}>Mediano (256px)</option>
+                      <option value={512}>Grande (512px)</option>
+                      <option value={1024}>Extra Grande (1024px)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🌈 Color Principal
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={newQR.customColor}
+                        onChange={(e) => setNewQR({...newQR, customColor: e.target.value})}
+                        className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={newQR.customColor}
+                        onChange={(e) => setNewQR({...newQR, customColor: e.target.value})}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                        placeholder="#3B82F6"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Target URL
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={newQR.targetUrl}
-                  onChange={(e) => setNewQR({...newQR, targetUrl: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
-                  placeholder="https://example.com"
-                />
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  id="enableAI"
-                  type="checkbox"
-                  checked={newQR.enableAI}
-                  onChange={(e) => setNewQR({...newQR, enableAI: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="enableAI" className="ml-2 block text-sm text-gray-900">
-                  🧠 Enable AI Smart Routing
-                </label>
-              </div>
-              
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-6 border-t">
                 <button
                   type="button"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setShowAdvanced(false);
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                 >
-                  {isCreating ? 'Creating...' : 'Create QR Code'}
+                  {isCreating ? 'Creando...' : '✨ Crear QR Code'}
                 </button>
               </div>
             </form>

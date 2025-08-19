@@ -44,35 +44,58 @@ export default function DashboardPage() {
   // Helper function to get style preset
   const getStylePreset = (preset: QRPresetStyle) => {
     const presets = {
-      classic: {},
-      rounded: { dotType: 'rounded', cornerSquareType: 'extra-rounded' },
-      dots: { dotType: 'dots', cornerSquareType: 'dot' },
-      classy: { dotType: 'classy-rounded', cornerSquareType: 'extra-rounded' },
+      classic: {
+        dotType: 'square' as const,
+        cornerSquareType: 'square' as const,
+        cornerDotType: 'square' as const
+      },
+      rounded: { 
+        dotType: 'rounded' as const, 
+        cornerSquareType: 'extra-rounded' as const,
+        cornerDotType: 'dot' as const
+      },
+      dots: { 
+        dotType: 'dots' as const, 
+        cornerSquareType: 'dot' as const,
+        cornerDotType: 'dot' as const
+      },
+      classy: { 
+        dotType: 'classy-rounded' as const, 
+        cornerSquareType: 'extra-rounded' as const,
+        cornerDotType: 'dot' as const
+      },
       gradient_blue: { 
-        dotType: 'rounded', 
-        cornerSquareType: 'extra-rounded',
+        dotType: 'rounded' as const, 
+        cornerSquareType: 'extra-rounded' as const,
+        cornerDotType: 'dot' as const,
         dotsColor: '#3B82F6',
         cornerSquareColor: '#1E40AF',
+        cornerDotColor: '#1E40AF',
         backgroundColor: '#EFF6FF'
       },
       gradient_purple: { 
-        dotType: 'classy-rounded', 
-        cornerSquareType: 'extra-rounded',
+        dotType: 'classy-rounded' as const, 
+        cornerSquareType: 'extra-rounded' as const,
+        cornerDotType: 'dot' as const,
         dotsColor: '#8B5CF6',
         cornerSquareColor: '#6D28D9',
+        cornerDotColor: '#6D28D9',
         backgroundColor: '#F3E8FF'
       },
       smartqr_brand: { 
-        dotType: 'rounded',
-        cornerSquareType: 'extra-rounded',
+        dotType: 'rounded' as const,
+        cornerSquareType: 'extra-rounded' as const,
+        cornerDotType: 'dot' as const,
         dotsColor: '#3B82F6',
-        cornerSquareColor: '#8B5CF6'
+        cornerSquareColor: '#8B5CF6',
+        cornerDotColor: '#8B5CF6',
+        backgroundColor: '#ffffff'
       }
     };
-    return presets[preset] || {};
+    return presets[preset] || presets.classic;
   };
 
-  // Generate QR preview with debouncing
+  // Generate QR preview with client-side styling
   const generatePreview = async () => {
     if (!newQR.targetUrl || !newQR.name) {
       setPreviewDataUrl(null);
@@ -86,27 +109,102 @@ export default function DashboardPage() {
         ? newQR.targetUrl 
         : `https://${newQR.targetUrl}`;
       
-      const qrOptions = {
-        size: Math.min(newQR.size, 200), // Limit preview size
-        style: newQR.style !== 'classic' ? {
-          ...getStylePreset(newQR.style),
-          dotsColor: newQR.customColor
-        } : undefined
-      };
+      // Force client-side generation for advanced styling
+      if (typeof window !== 'undefined' && newQR.style !== 'classic') {
+        // Use advanced client-side styling
+        const dataUrl = await generateStyledQRPreview(previewUrl);
+        setPreviewDataUrl(dataUrl);
+      } else {
+        // Fallback to basic QR for classic style or when client-side not available
+        const qrOptions = {
+          size: Math.min(newQR.size, 200),
+          color: {
+            dark: newQR.customColor,
+            light: '#FFFFFF'
+          }
+        };
 
-      const qrData = await qrGenerator.generateQRCode(
-        newQR.name, 
-        previewUrl, 
-        qrOptions
-      );
-      
-      setPreviewDataUrl(qrData.qrCodeDataUrl);
+        // Import the basic qrcode library
+        const QRCode = (await import('qrcode')).default;
+        
+        const qrCodeDataUrl = await QRCode.toDataURL(previewUrl, {
+          width: qrOptions.size,
+          margin: 2,
+          color: qrOptions.color,
+          errorCorrectionLevel: 'M'
+        });
+        
+        setPreviewDataUrl(qrCodeDataUrl);
+      }
     } catch (error) {
       console.error('Preview generation failed:', error);
       setPreviewDataUrl(null);
     }
     
     setIsGeneratingPreview(false);
+  };
+
+  // Client-side styled QR generation for preview
+  const generateStyledQRPreview = async (data: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Dynamic import to ensure it only runs client-side
+        const QRCodeStyling = (await import('qr-code-styling')).default;
+        
+        const stylePreset = getStylePreset(newQR.style);
+        
+        const qrCode = new QRCodeStyling({
+          width: Math.min(newQR.size, 200),
+          height: Math.min(newQR.size, 200),
+          margin: 10,
+          data: data,
+          
+          qrOptions: {
+            errorCorrectionLevel: 'M'
+          },
+          
+          dotsOptions: {
+            color: stylePreset.dotsColor || newQR.customColor,
+            type: stylePreset.dotType || 'square'
+          },
+          
+          cornersSquareOptions: {
+            color: stylePreset.cornerSquareColor || newQR.customColor,
+            type: stylePreset.cornerSquareType || 'square'
+          },
+          
+          cornersDotOptions: {
+            color: stylePreset.cornerDotColor || newQR.customColor,
+            type: stylePreset.cornerDotType || 'square'
+          },
+          
+          backgroundOptions: {
+            color: stylePreset.backgroundColor || '#ffffff'
+          }
+        });
+
+        // Create a temporary canvas for generation
+        const canvas = document.createElement('canvas');
+        qrCode.append(canvas);
+        
+        // Wait a bit for rendering then get the data URL
+        setTimeout(() => {
+          try {
+            const dataUrl = canvas.toDataURL('image/png', 0.9);
+            // Clean up
+            canvas.remove();
+            resolve(dataUrl);
+          } catch (err) {
+            console.error('Canvas to data URL failed:', err);
+            reject(err);
+          }
+        }, 200);
+        
+      } catch (error) {
+        console.error('Styled QR generation error:', error);
+        reject(error);
+      }
+    });
   };
 
   // Debounced preview generation

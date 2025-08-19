@@ -24,6 +24,9 @@
     "@stripe/stripe-js": "^7.8.0",
     "@types/qrcode": "^1.5.5",
     "@types/uuid": "^10.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "clsx": "^2.1.1",
     "next": "15.4.6",
     "next-auth": "^4.24.11",
@@ -33,19 +36,16 @@
     "react-dom": "19.1.0",
     "stripe": "^18.4.0",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4",
+    "typescript": "^5",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@netlify/functions": "^4.2.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "netlify-lambda": "^2.0.16",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "netlify-lambda": "^2.0.16"
   }
 }

@@ -36,7 +36,7 @@ export class AuthManager {
   // Create new user account
   createUser(name: string, email: string, plan: User['plan'] = 'FREE'): User {
     const user: User = {
-      id: this.generateUserId(),
+      id: email.trim().toLowerCase(), // Use email as consistent ID
       name: name.trim(),
       email: email.trim().toLowerCase(),
       plan,
@@ -51,14 +51,16 @@ export class AuthManager {
 
   // Login user (for demo, just create/load user)
   loginUser(email: string, name?: string): User {
-    // First try to find existing user by email
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // First try to find existing user by email in localStorage
     const existingUser = this.getCurrentUser();
-    if (existingUser && existingUser.email === email.toLowerCase()) {
+    if (existingUser && existingUser.email === normalizedEmail) {
       return existingUser;
     }
 
-    // Create new user
-    return this.createUser(name || email.split('@')[0], email);
+    // Create new user with email as ID for consistency across browsers
+    return this.createUser(name || normalizedEmail.split('@')[0], normalizedEmail);
   }
 
   // Update user data

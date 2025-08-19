@@ -30,11 +30,16 @@ export default function DashboardPage() {
   const planInfo = getPlanInfo();
 
   useEffect(() => {
+    // Add dependency on user to refetch when user changes
     fetchQRCodes();
-  }, []);
+  }, [user]);
 
   const fetchQRCodes = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping QR fetch');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       // Use Netlify functions in production, local API in development
@@ -42,13 +47,28 @@ export default function DashboardPage() {
         ? `/.netlify/functions/qr-generate?userId=${user.id}`
         : `/api/qr/generate?userId=${user.id}`;
       
+      console.log('Fetching QR codes from:', endpoint);
+      console.log('User ID:', user.id);
+      
       const response = await fetch(endpoint);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      console.log('Response data:', data);
+      
       if (data.success) {
         setQrCodes(data.qrCodes);
+        console.log('QR codes loaded:', data.qrCodes.length);
+      } else {
+        console.error('API returned error:', data.error);
       }
     } catch (error) {
       console.error('Failed to fetch QR codes:', error);
+      // Still set loading to false even if error
     } finally {
       setIsLoading(false);
     }

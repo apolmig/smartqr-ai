@@ -22,13 +22,13 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# QR redirect handling
+# QR redirect handling - Fixed routing (must be before SPA fallback)
 [[redirects]]
   from = "/r/:shortId"
   to = "/.netlify/functions/qr-redirect?shortId=:shortId"
   status = 200
 
-# SPA fallback for client-side routing
+# SPA fallback for client-side routing (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"

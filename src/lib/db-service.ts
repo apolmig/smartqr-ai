@@ -125,11 +125,6 @@ export class DatabaseService {
     });
   }
 
-  static async deleteQRCode(shortId: string, userId: string) {
-    return await prisma.qRCode.deleteMany({
-      where: { shortId, userId },
-    });
-  }
 
   // Analytics operations
   static async recordScan(qrCodeId: string, data: {

@@ -18,8 +18,11 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
   }
 
   try {
-    const shortId = event.queryStringParameters?.shortId;
-    console.log('Extracted shortId:', shortId);
+    // Extract shortId from path parameter (new routing) or query parameter (fallback)
+    const pathShortId = event.path.split('/').pop();
+    const queryShortId = event.queryStringParameters?.shortId;
+    const shortId = pathShortId && pathShortId !== 'qr-redirect' ? pathShortId : queryShortId;
+    console.log('Extracted shortId from path:', pathShortId, 'from query:', queryShortId, 'final:', shortId);
     
     if (!shortId) {
       console.log('No shortId found, redirecting to lander');
@@ -105,12 +108,37 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       browser,
     });
 
+    // Validate and format target URL
+    let validatedUrl;
+    try {
+      // Add protocol if missing
+      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        validatedUrl = `https://${targetUrl}`;
+      } else {
+        validatedUrl = targetUrl;
+      }
+      
+      // Validate URL format and protocol
+      const urlObject = new URL(validatedUrl);
+      if (!['http:', 'https:'].includes(urlObject.protocol)) {
+        throw new Error('Invalid protocol');
+      }
+    } catch (error) {
+      console.error('Invalid target URL:', targetUrl, error);
+      return {
+        statusCode: 302,
+        headers: {
+          Location: `${process.env.URL || 'https://smartqr.es'}/lander`,
+        },
+      };
+    }
+
     // Redirect to target URL
-    console.log('Redirecting to target URL:', targetUrl);
+    console.log('Redirecting to target URL:', validatedUrl);
     return {
       statusCode: 302,
       headers: {
-        Location: targetUrl,
+        Location: validatedUrl,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     };
@@ -120,7 +148,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     return {
       statusCode: 302,
       headers: {
-        Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
+        Location: `${process.env.URL || 'https://smartqr.es'}/lander`,
       },
     };
   }

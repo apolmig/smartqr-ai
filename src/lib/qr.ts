@@ -62,8 +62,12 @@ export interface QRGenerateOptions {
 export class QRGenerator {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'https://smartqr.es') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    // Use environment variables with fallback
+    this.baseUrl = baseUrl || 
+                   process.env.NEXT_PUBLIC_BASE_URL || 
+                   process.env.URL || 
+                   'https://smartqr.es';
   }
 
   async generateQRCode(

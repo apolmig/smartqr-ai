@@ -15,7 +15,7 @@ export async function GET(
     const qrCode = await DatabaseService.getQRCode(shortId);
 
     if (!qrCode || !qrCode.isActive) {
-      return NextResponse.redirect(new URL('/404', request.url));
+      return NextResponse.redirect(new URL('/lander', request.url));
     }
 
     // Collect analytics data
@@ -78,12 +78,30 @@ export async function GET(
       browser,
     });
 
+    // Validate and format target URL
+    let validatedUrl = targetUrl;
+    try {
+      // Ensure the URL is properly formatted
+      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        validatedUrl = `https://${targetUrl}`;
+      }
+      // Validate URL format and protocol
+      const urlObject = new URL(validatedUrl);
+      if (!['http:', 'https:'].includes(urlObject.protocol)) {
+        console.error('Invalid protocol in target URL:', validatedUrl);
+        return NextResponse.redirect(new URL('/lander', request.url));
+      }
+    } catch (error) {
+      console.error('Invalid target URL:', targetUrl, error);
+      return NextResponse.redirect(new URL('/lander', request.url));
+    }
+
     // Redirect to target URL
-    return NextResponse.redirect(targetUrl);
+    return NextResponse.redirect(validatedUrl);
 
   } catch (error) {
     console.error('QR redirect error:', error);
-    return NextResponse.redirect(new URL('/error', request.url));
+    return NextResponse.redirect(new URL('/lander', request.url));
   }
 }
 

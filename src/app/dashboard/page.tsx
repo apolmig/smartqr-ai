@@ -109,9 +109,10 @@ export default function DashboardPage() {
         ? newQR.targetUrl 
         : `https://${newQR.targetUrl}`;
       
-      // Force client-side generation for advanced styling
-      if (typeof window !== 'undefined' && newQR.style !== 'classic') {
-        // Use advanced client-side styling
+      // Force client-side generation for all styles when customizations are used
+      if (typeof window !== 'undefined') {
+        // Always use advanced styling in browser for better customization
+        console.log('Generating preview with style:', newQR.style, 'color:', newQR.customColor);
         const dataUrl = await generateStyledQRPreview(previewUrl);
         setPreviewDataUrl(dataUrl);
       } else {
@@ -152,53 +153,71 @@ export default function DashboardPage() {
         const QRCodeStyling = (await import('qr-code-styling')).default;
         
         const stylePreset = getStylePreset(newQR.style);
+        console.log('Style preset for', newQR.style, ':', stylePreset);
         
-        const qrCode = new QRCodeStyling({
+        const config = {
           width: Math.min(newQR.size, 200),
           height: Math.min(newQR.size, 200),
           margin: 10,
           data: data,
           
           qrOptions: {
-            errorCorrectionLevel: 'M'
+            errorCorrectionLevel: 'M' as const
           },
           
           dotsOptions: {
             color: stylePreset.dotsColor || newQR.customColor,
-            type: stylePreset.dotType || 'square'
+            type: stylePreset.dotType
           },
           
           cornersSquareOptions: {
             color: stylePreset.cornerSquareColor || newQR.customColor,
-            type: stylePreset.cornerSquareType || 'square'
+            type: stylePreset.cornerSquareType
           },
           
           cornersDotOptions: {
             color: stylePreset.cornerDotColor || newQR.customColor,
-            type: stylePreset.cornerDotType || 'square'
+            type: stylePreset.cornerDotType
           },
           
           backgroundOptions: {
             color: stylePreset.backgroundColor || '#ffffff'
           }
-        });
+        };
+        
+        console.log('QR config:', config);
+        const qrCode = new QRCodeStyling(config);
 
-        // Create a temporary canvas for generation
-        const canvas = document.createElement('canvas');
-        qrCode.append(canvas);
+        // Create a temporary div to hold the canvas
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.top = '-9999px';
+        container.style.left = '-9999px';
+        document.body.appendChild(container);
+        
+        // Append to container
+        qrCode.append(container);
         
         // Wait a bit for rendering then get the data URL
         setTimeout(() => {
           try {
-            const dataUrl = canvas.toDataURL('image/png', 0.9);
-            // Clean up
-            canvas.remove();
-            resolve(dataUrl);
+            const canvas = container.querySelector('canvas');
+            if (canvas) {
+              const dataUrl = canvas.toDataURL('image/png', 0.9);
+              console.log('QR generated successfully with style:', newQR.style);
+              // Clean up
+              document.body.removeChild(container);
+              resolve(dataUrl);
+            } else {
+              console.error('No canvas found after QR generation');
+              reject(new Error('Canvas not found'));
+            }
           } catch (err) {
             console.error('Canvas to data URL failed:', err);
+            document.body.removeChild(container);
             reject(err);
           }
-        }, 200);
+        }, 300);
         
       } catch (error) {
         console.error('Styled QR generation error:', error);

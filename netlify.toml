@@ -1,11 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npx prisma migrate deploy && npx prisma generate && npm run build"
   functions = "netlify/functions"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
-  PRISMA_GENERATE_SKIP_AUTOINSTALL = "true"
 
 # Redirect all server-side requests to Netlify Functions
 [[redirects]]

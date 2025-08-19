@@ -23,9 +23,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       
       let qrCodes = [];
       try {
+        console.log('Attempting to fetch QR codes for user:', userId);
         qrCodes = await DatabaseService.getUserQRCodes(userId);
+        console.log('Fetched QR codes:', qrCodes.length);
       } catch (dbError) {
         console.warn('Database fetch failed, returning empty array:', dbError);
+        console.error('Full error details:', dbError.message, dbError.stack);
         qrCodes = []; // Return empty array if database fails
       }
 

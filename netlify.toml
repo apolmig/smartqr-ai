@@ -20,9 +20,8 @@
 # QR redirect handling
 [[redirects]]
   from = "/r/:shortId"
-  to = "/.netlify/functions/qr-redirect"
-  status = 302
-  query = {shortId = ":shortId"}
+  to = "/.netlify/functions/qr-redirect?shortId=:shortId"
+  status = 200
 
 # SPA fallback for client-side routing
 [[redirects]]

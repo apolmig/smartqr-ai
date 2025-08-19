@@ -4,6 +4,12 @@ import { aiEngine, UserContext } from '../../src/lib/ai-engine';
 import { getDeviceType, getBrowserName, getOSName } from '../../src/lib/utils';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  console.log('QR redirect function called:', {
+    path: event.path,
+    method: event.httpMethod,
+    queryParams: event.queryStringParameters
+  });
+
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
@@ -13,22 +19,29 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
   try {
     const shortId = event.queryStringParameters?.shortId;
+    console.log('Extracted shortId:', shortId);
     
     if (!shortId) {
+      console.log('No shortId found, redirecting to lander');
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing shortId parameter' }),
+        statusCode: 302,
+        headers: {
+          Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
+        },
       };
     }
 
     // Find the QR code
+    console.log('Looking up QR code with shortId:', shortId);
     const qrCode = await DatabaseService.getQRCode(shortId);
+    console.log('Found QR code:', qrCode ? { id: qrCode.id, name: qrCode.name, targetUrl: qrCode.targetUrl, isActive: qrCode.isActive } : 'null');
 
     if (!qrCode || !qrCode.isActive) {
+      console.log('QR code not found or inactive, redirecting to lander');
       return {
         statusCode: 302,
         headers: {
-          Location: 'https://smartqr.ai/404',
+          Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
         },
       };
     }
@@ -93,6 +106,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     });
 
     // Redirect to target URL
+    console.log('Redirecting to target URL:', targetUrl);
     return {
       statusCode: 302,
       headers: {
@@ -106,7 +120,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     return {
       statusCode: 302,
       headers: {
-        Location: 'https://smartqr.ai/error',
+        Location: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/lander`,
       },
     };
   }

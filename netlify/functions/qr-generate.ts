@@ -40,11 +40,24 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         },
         body: JSON.stringify({
           success: true,
-          qrCodes: qrCodes.map(qr => ({
-            ...qr,
-            scanCount: qr.totalScans,
-            qrCodeDataUrl: `/api/qr/${qr.id}/image`, // We'll create this endpoint
-            redirectUrl: `${process.env.URL || 'https://smartqr-ai.netlify.app'}/r/${qr.shortId}`,
+          qrCodes: await Promise.all(qrCodes.map(async (qr) => {
+            // Regenerate QR code image for each QR
+            const redirectUrl = `${process.env.URL || 'https://smartqr-ai.netlify.app'}/r/${qr.shortId}`;
+            let qrCodeDataUrl = '';
+            
+            try {
+              const qrData = await qrGenerator.generateQRCode(qr.name, redirectUrl);
+              qrCodeDataUrl = qrData.qrCodeDataUrl;
+            } catch (error) {
+              console.error('Failed to regenerate QR for', qr.shortId, error);
+            }
+            
+            return {
+              ...qr,
+              scanCount: qr.totalScans,
+              qrCodeDataUrl,
+              redirectUrl,
+            };
           }))
         }),
       };

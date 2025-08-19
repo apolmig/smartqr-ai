@@ -1,0 +1,37 @@
+# 🚀 EXACT COMMANDS TO DEPLOY SMARTQR.AI
+
+## Step 1: Create GitHub Repository
+1. Go to: https://github.com/new
+2. Repository name: smartqr-ai
+3. Make it public
+4. Click "Create repository"
+
+## Step 2: Push to GitHub (run these commands)
+cd smartqr-ai
+git remote add origin https://github.com/YOUR_USERNAME/smartqr-ai.git
+git branch -M main
+git push -u origin main
+
+## Step 3: Deploy to Netlify
+1. Go to: https://netlify.com
+2. Click "Add new site" 
+3. Click "Import an existing project"
+4. Choose GitHub
+5. Select "smartqr-ai" repository
+6. Build settings:
+   - Build command: npm run build
+   - Publish directory: .next
+   - Functions directory: netlify/functions
+7. Click "Deploy site"
+
+## Step 4: Set Environment Variables (in Netlify dashboard)
+NEXTAUTH_SECRET=your-32-character-random-string
+NEXTAUTH_URL=https://your-site-name.netlify.app
+NEXT_PUBLIC_BASE_URL=https://your-site-name.netlify.app
+DATABASE_URL=postgresql://user:pass@host:5432/db
+STRIPE_SECRET_KEY=sk_test_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_secret
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
+
+## Step 5: Test Your Live Site!
+Your app will be live at: https://your-site-name.netlify.app

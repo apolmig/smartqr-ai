@@ -75,6 +75,12 @@ model QRCode {
   shortId      String   @unique // Short identifier for the QR URL
   targetUrl    String   // Current target URL
   
+  // QR Customization
+  qrStyle      String   @default("classic") // Style preset name
+  qrColor      String   @default("#000000") // Primary color (dots)
+  qrSize       Int      @default(256)       // Size in pixels
+  qrOptions    String?  // JSON string for additional options
+  
   // Smart features
   isActive     Boolean  @default(true)
   enableAI     Boolean  @default(false)

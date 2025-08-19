@@ -13,6 +13,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/qr/*/delete"
+  to = "/.netlify/functions/qr-delete"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200

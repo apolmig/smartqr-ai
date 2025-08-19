@@ -386,6 +386,35 @@ export default function DashboardPage() {
     }
   };
 
+  const deleteQRCode = async (qrCode: QRCode) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${qrCode.name}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      // Use different endpoints for development and production
+      const endpoint = process.env.NODE_ENV === 'production'
+        ? `/.netlify/functions/qr-delete?id=${qrCode.id}&userId=${user?.id}`
+        : `/api/qr/${qrCode.id}/delete?userId=${user?.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Remove from local state
+        setQrCodes(qrCodes.filter(qr => qr.id !== qrCode.id));
+        alert('QR code eliminado correctamente');
+      } else {
+        alert(data.error || 'Error al eliminar el QR code');
+      }
+    } catch (error) {
+      console.error('Failed to delete QR code:', error);
+      alert('Error al eliminar el QR code');
+    }
+  };
+
   const toggleAI = async (qrCode: QRCode) => {
     // Temporarily disable AI toggle in production until we create the Netlify function
     if (process.env.NODE_ENV === 'production') {
@@ -638,6 +667,12 @@ export default function DashboardPage() {
                       className="text-green-600 hover:text-green-800 text-sm"
                     >
                       Download
+                    </button>
+                    <button
+                      onClick={() => deleteQRCode(qr)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Delete
                     </button>
                     <button
                       onClick={() => toggleAI(qr)}

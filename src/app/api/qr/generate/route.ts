@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
         name: qrData.name,
         targetUrl: qrData.targetUrl,
         enableAI: enableAI,
+        qrStyle: qrOptions?.style ? 'custom' : 'classic',
+        qrColor: qrOptions?.color?.dark || qrOptions?.style?.dotsColor || '#000000',
+        qrSize: qrOptions?.size || 256,
+        qrOptions: qrOptions,
       });
       console.log('QR code saved to database:', dbQRCode.id);
       
@@ -123,7 +127,28 @@ export async function GET(request: NextRequest) {
         let qrCodeDataUrl = '';
         
         try {
-          const qrData = await qrGenerator.generateQRCode(qr.name, redirectUrl);
+          // Use stored QR options for regeneration
+          let storedOptions = null;
+          if (qr.qrOptions) {
+            try {
+              storedOptions = JSON.parse(qr.qrOptions);
+            } catch (e) {
+              console.error('Failed to parse stored QR options:', e);
+            }
+          }
+          
+          // Build options from stored data
+          const regenerationOptions = {
+            size: qr.qrSize || 256,
+            color: {
+              dark: qr.qrColor || '#000000',
+              light: '#FFFFFF'
+            },
+            ...(storedOptions || {})
+          };
+          
+          console.log('Regenerating QR with stored options:', regenerationOptions);
+          const qrData = await qrGenerator.generateQRCode(qr.name, redirectUrl, regenerationOptions);
           qrCodeDataUrl = qrData.qrCodeDataUrl;
         } catch (error) {
           console.error('Failed to regenerate QR for', qr.shortId, error);

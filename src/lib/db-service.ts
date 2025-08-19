@@ -34,6 +34,10 @@ export class DatabaseService {
     name: string;
     targetUrl: string;
     enableAI?: boolean;
+    qrStyle?: string;
+    qrColor?: string;
+    qrSize?: number;
+    qrOptions?: any;
   }) {
     // Check user's plan limits
     const user = await prisma.user.findUnique({
@@ -52,10 +56,15 @@ export class DatabaseService {
     
     return await prisma.qRCode.create({
       data: {
-        ...data,
+        name: data.name,
+        targetUrl: data.targetUrl,
         shortId,
         userId,
         enableAI: data.enableAI && limits.aiFeatures,
+        qrStyle: data.qrStyle || 'classic',
+        qrColor: data.qrColor || '#000000',
+        qrSize: data.qrSize || 256,
+        qrOptions: data.qrOptions ? JSON.stringify(data.qrOptions) : null,
       },
     });
   }
@@ -71,6 +80,24 @@ export class DatabaseService {
         variants: true,
       },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  static async deleteQRCode(qrCodeId: string, userId: string) {
+    // Verify the QR code belongs to the user before deleting
+    const qrCode = await prisma.qRCode.findFirst({
+      where: {
+        id: qrCodeId,
+        userId: userId,
+      },
+    });
+
+    if (!qrCode) {
+      throw new Error('QR code not found or does not belong to user');
+    }
+
+    return await prisma.qRCode.delete({
+      where: { id: qrCodeId },
     });
   }
 

@@ -109,34 +109,40 @@ export default function DashboardPage() {
         ? newQR.targetUrl 
         : `https://${newQR.targetUrl}`;
       
-      // Force client-side generation for all styles when customizations are used
-      if (typeof window !== 'undefined') {
-        // Always use advanced styling in browser for better customization
-        console.log('Generating preview with style:', newQR.style, 'color:', newQR.customColor);
-        const dataUrl = await generateStyledQRPreview(previewUrl);
-        setPreviewDataUrl(dataUrl);
-      } else {
-        // Fallback to basic QR for classic style or when client-side not available
-        const qrOptions = {
-          size: Math.min(newQR.size, 200),
-          color: {
-            dark: newQR.customColor,
-            light: '#FFFFFF'
-          }
-        };
-
-        // Import the basic qrcode library
-        const QRCode = (await import('qrcode')).default;
-        
-        const qrCodeDataUrl = await QRCode.toDataURL(previewUrl, {
-          width: qrOptions.size,
-          margin: 2,
-          color: qrOptions.color,
-          errorCorrectionLevel: 'M'
-        });
-        
-        setPreviewDataUrl(qrCodeDataUrl);
+      // Try advanced styling first, fallback to basic if it fails
+      try {
+        if (typeof window !== 'undefined' && newQR.style !== 'classic') {
+          console.log('Generating styled preview with style:', newQR.style, 'color:', newQR.customColor);
+          const dataUrl = await generateStyledQRPreview(previewUrl);
+          setPreviewDataUrl(dataUrl);
+          return;
+        }
+      } catch (styledError) {
+        console.warn('Styled QR generation failed, falling back to basic:', styledError);
       }
+      
+      // Fallback to basic QR generation with color customization
+      console.log('Using basic QR generation with custom color:', newQR.customColor);
+      // Generate basic QR with custom color
+      const qrOptions = {
+        size: Math.min(newQR.size, 200),
+        color: {
+          dark: newQR.customColor,
+          light: '#FFFFFF'
+        }
+      };
+
+      // Import the basic qrcode library
+      const QRCode = (await import('qrcode')).default;
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(previewUrl, {
+        width: qrOptions.size,
+        margin: 2,
+        color: qrOptions.color,
+        errorCorrectionLevel: 'M'
+      });
+      
+      setPreviewDataUrl(qrCodeDataUrl);
     } catch (error) {
       console.error('Preview generation failed:', error);
       setPreviewDataUrl(null);
@@ -150,6 +156,7 @@ export default function DashboardPage() {
     return new Promise(async (resolve, reject) => {
       try {
         // Dynamic import to ensure it only runs client-side
+        // @ts-ignore - qr-code-styling has type issues
         const QRCodeStyling = (await import('qr-code-styling')).default;
         
         const stylePreset = getStylePreset(newQR.style);
@@ -809,8 +816,13 @@ export default function DashboardPage() {
                             style={{ maxWidth: '150px', maxHeight: '150px' }}
                           />
                           <p className="text-xs text-gray-500 mt-2">
-                            {newQR.size}px • {newQR.style}
+                            {newQR.size}px • <span className="capitalize">{newQR.style.replace('_', ' ')}</span>
                           </p>
+                          {newQR.style !== 'classic' && (
+                            <p className="text-xs text-amber-600 mt-1">
+                              ⚠️ Estilos avanzados se aplicarán en el QR final
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <div className="text-center text-gray-400">

@@ -1,0 +1,12 @@
+After you create the GitHub repository at https://github.com/new:
+
+Repository name: smartqr-ai
+Make it: Public
+Click: Create repository
+
+Then I will automatically run:
+git push -u origin main
+
+And your complete SmartQR.ai application will be on GitHub!
+
+After that, we can deploy to Netlify in 1 minute.

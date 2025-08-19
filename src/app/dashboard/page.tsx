@@ -389,7 +389,7 @@ export default function DashboardPage() {
                   required
                   value={newQR.name}
                   onChange={(e) => setNewQR({...newQR, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                   placeholder="e.g., Website Homepage"
                 />
               </div>
@@ -403,7 +403,7 @@ export default function DashboardPage() {
                   required
                   value={newQR.targetUrl}
                   onChange={(e) => setNewQR({...newQR, targetUrl: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                   placeholder="https://example.com"
                 />
               </div>

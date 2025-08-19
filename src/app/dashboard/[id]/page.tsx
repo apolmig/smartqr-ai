@@ -317,7 +317,7 @@ export default function QRDetailPage() {
                     required
                     value={newRule.name}
                     onChange={(e) => setNewRule({...newRule, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-500"
                     placeholder="e.g., Mobile Users"
                   />
                 </div>
@@ -329,7 +329,7 @@ export default function QRDetailPage() {
                   <select
                     value={newRule.condition}
                     onChange={(e) => setNewRule({...newRule, condition: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                   >
                     <option value="mobile">Mobile Device</option>
                     <option value="desktop">Desktop</option>
@@ -352,7 +352,7 @@ export default function QRDetailPage() {
                     required
                     value={newRule.targetUrl}
                     onChange={(e) => setNewRule({...newRule, targetUrl: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-500"
                     placeholder="https://example.com/mobile"
                   />
                 </div>
@@ -367,7 +367,7 @@ export default function QRDetailPage() {
                     max="10"
                     value={newRule.priority}
                     onChange={(e) => setNewRule({...newRule, priority: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                   />
                 </div>
                 
@@ -375,15 +375,15 @@ export default function QRDetailPage() {
                   <button
                     type="button"
                     onClick={() => setShowAddRule(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all transform hover:scale-105"
                   >
-                    Add Rule
+                    ✨ Add Rule
                   </button>
                 </div>
               </form>

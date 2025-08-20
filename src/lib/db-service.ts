@@ -108,9 +108,31 @@ export class DatabaseService {
     try {
       console.log('getUserQRCodes called with identifier:', userIdentifier);
       
-      // Use the same logic as ensureUser to find the user
-      const user = await this.ensureUser(userIdentifier, `User ${userIdentifier}`);
-      console.log('Found user via ensureUser:', user.id, 'email:', user.email);
+      // Find all users and QR codes to debug
+      const allUsers = await prisma.user.findMany({
+        select: { id: true, email: true, name: true }
+      });
+      console.log('All users in database:', JSON.stringify(allUsers, null, 2));
+      
+      const allQRCodes = await prisma.qRCode.findMany({
+        select: { id: true, name: true, userId: true, shortId: true }
+      });
+      console.log('All QR codes in database:', JSON.stringify(allQRCodes, null, 2));
+      
+      // Try to find user exactly as ensureUser does
+      const userEmail = `${userIdentifier}@demo.local`;
+      console.log('Looking for user with email:', userEmail);
+      
+      const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+      });
+      
+      if (!user) {
+        console.log('No user found with email:', userEmail);
+        return [];
+      }
+      
+      console.log('Found user:', user.id, 'email:', user.email);
       
       const qrCodes = await prisma.qRCode.findMany({
         where: { userId: user.id },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { qrGenerator } from '@/lib/qr';
-import { DatabaseService } from '@/lib/db-service-fixed';
+import { DatabaseService } from '@/lib/db-service';
 
 export async function POST(request: NextRequest) {
   try {

@@ -108,30 +108,9 @@ export class DatabaseService {
     try {
       console.log('getUserQRCodes called with identifier:', userIdentifier);
       
-      // First try to find user by email (for anonymous users)
-      const userEmail = `${userIdentifier}@demo.local`;
-      console.log('Looking for user with email:', userEmail);
-      
-      let user = await prisma.user.findUnique({
-        where: { email: userEmail },
-      });
-      console.log('User found by email:', user ? user.id : 'none');
-
-      // If not found by email, try by ID
-      if (!user) {
-        console.log('Trying to find user by ID:', userIdentifier);
-        user = await prisma.user.findUnique({
-          where: { id: userIdentifier },
-        });
-        console.log('User found by ID:', user ? user.id : 'none');
-      }
-
-      if (!user) {
-        console.log(`No user found for identifier: ${userIdentifier}`);
-        return [];
-      }
-
-      console.log('Found user:', user.id, 'email:', user.email);
+      // Use the same logic as ensureUser to find the user
+      const user = await this.ensureUser(userIdentifier, `User ${userIdentifier}`);
+      console.log('Found user via ensureUser:', user.id, 'email:', user.email);
       
       const qrCodes = await prisma.qRCode.findMany({
         where: { userId: user.id },

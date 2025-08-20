@@ -7,27 +7,33 @@ export class DatabaseService {
     try {
       // For anonymous users, find or create by email
       const userEmail = email || `${userId}@demo.local`;
+      console.log('ensureUser called with userId:', userId, 'email:', userEmail);
       
       // Try to find existing user by email first
       let existingUser = await prisma.user.findUnique({
         where: { email: userEmail },
       });
+      console.log('Existing user found:', existingUser ? existingUser.id : 'none');
 
       if (existingUser) {
+        console.log('Returning existing user:', existingUser.id);
         return existingUser;
       }
 
       // Create new user if not found (let Prisma generate the ID)
-      return await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           name,
           email: userEmail,
           plan: 'FREE',
         },
       });
+      console.log('Created new user:', newUser.id, 'with email:', newUser.email);
+      return newUser;
     } catch (error) {
       console.warn('Failed to ensure user, using fallback:', error);
       // For demo purposes, return a mock user if database fails
+      const userEmail = email || `${userId}@demo.local`;
       return {
         id: 'demo-user',
         email: userEmail,

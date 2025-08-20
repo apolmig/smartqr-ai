@@ -7,7 +7,7 @@ export class DatabaseService {
     try {
       // Try to find existing user
       const existingUser = await prisma.user.findUnique({
-        where: { email: email || `${userId}@demo.local` },
+        where: { id: userId },
       });
 
       if (existingUser) {
@@ -41,7 +41,7 @@ export class DatabaseService {
   }) {
     // Check user's plan limits
     const user = await prisma.user.findUnique({
-      where: { email: email || `${userId}@demo.local` },
+      where: { id: userId },
       include: { qrCodes: true },
     });
 
@@ -188,7 +188,7 @@ export class DatabaseService {
     since.setDate(since.getDate() - days);
 
     const user = await prisma.user.findUnique({
-      where: { email: email || `${userId}@demo.local` },
+      where: { id: userId },
       include: {
         qrCodes: {
           include: {

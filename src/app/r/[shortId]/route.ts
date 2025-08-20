@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { DatabaseService } from '@/lib/db-service';
+import { DatabaseService } from '@/lib/db-service-fixed';
 import { aiEngine, UserContext } from '@/lib/ai-engine';
 import { getDeviceType, getBrowserName, getOSName } from '@/lib/utils';
 

@@ -1,13 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, authManager } from '@/lib/auth';
+import { User, authService } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, name?: string) => Promise<User>;
-  logout: () => void;
+  login: (email: string, name?: string) => Promise<User>; // Legacy
+  loginWithPassword: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  register: (email: string, password: string, name: string) => Promise<{ success: boolean; user?: any; error?: string }>;
+  logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => User | null;
   canCreateQRCode: () => { canCreate: boolean; reason?: string };
   incrementQRCount: () => void;
@@ -28,25 +30,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on mount
-    const currentUser = authManager.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    // Load user from storage/session on mount
+    const loadUser = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadUser();
   }, []);
 
+  // Legacy login method for compatibility
   const login = async (email: string, name?: string): Promise<User> => {
-    const loggedInUser = authManager.loginUser(email, name);
+    const loggedInUser = authService.loginUser(email, name);
     setUser(loggedInUser);
     return loggedInUser;
   };
 
-  const logout = () => {
-    authManager.logout();
+  // New password-based login
+  const loginWithPassword = async (email: string, password: string) => {
+    const result = await authService.login(email, password);
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+    return result;
+  };
+
+  // Registration
+  const register = async (email: string, password: string, name: string) => {
+    return await authService.register(email, password, name);
+  };
+
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
   };
 
   const updateUser = (updates: Partial<User>): User | null => {
-    const updatedUser = authManager.updateUser(updates);
+    const updatedUser = authService.updateUser(updates);
     if (updatedUser) {
       setUser(updatedUser);
     }
@@ -54,37 +80,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const canCreateQRCode = () => {
-    return authManager.canCreateQRCode(user);
+    return authService.canCreateQRCode(user);
   };
 
-  const incrementQRCount = () => {
-    authManager.incrementQRCount();
-    const updatedUser = authManager.getCurrentUser();
+  const incrementQRCount = async () => {
+    authService.incrementQRCount();
+    const updatedUser = await authService.getCurrentUser();
     if (updatedUser) {
       setUser(updatedUser);
     }
   };
 
-  const incrementScanCount = () => {
-    authManager.incrementScanCount();
-    const updatedUser = authManager.getCurrentUser();
+  const incrementScanCount = async () => {
+    authService.incrementScanCount();
+    const updatedUser = await authService.getCurrentUser();
     if (updatedUser) {
       setUser(updatedUser);
     }
   };
 
   const getUserLimits = () => {
-    return authManager.getUserLimits(user);
+    return authService.getUserLimits(user);
   };
 
   const getPlanInfo = () => {
-    return authManager.getPlanInfo(user?.plan || 'FREE');
+    return authService.getPlanInfo(user?.plan || 'FREE');
   };
 
   const value: AuthContextType = {
     user,
     isLoading,
     login,
+    loginWithPassword,
+    register,
     logout,
     updateUser,
     canCreateQRCode,

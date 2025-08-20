@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { aiEngine } from '@/lib/ai-engine';
+import prisma from '@/lib/prisma';
+import { SmartRoutingRule } from '@/lib/ai-enhanced';
+import { ApiResponseHelper } from '@/lib/api-response';
 
 export async function GET(
   request: NextRequest,
@@ -8,18 +9,45 @@ export async function GET(
 ) {
   try {
     const { id } = params;
-    const rules = await db.getRoutingRules(id);
     
-    return NextResponse.json({
-      success: true,
-      rules
+    // Get QR code with routing rules
+    const qrCode = await prisma.qRCode.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        enableAI: true,
+        qrOptions: true
+      }
     });
+
+    if (!qrCode) {
+      return ApiResponseHelper.notFound('QR code not found');
+    }
+
+    // Extract routing rules from qrOptions JSON
+    let routingRules: SmartRoutingRule[] = [];
+    if (qrCode.qrOptions) {
+      try {
+        const options = JSON.parse(qrCode.qrOptions);
+        routingRules = options.routingRules || [];
+      } catch (error) {
+        console.error('Failed to parse routing rules:', error);
+      }
+    }
+    
+    return ApiResponseHelper.success({
+      qrCode: {
+        id: qrCode.id,
+        name: qrCode.name,
+        enableAI: qrCode.enableAI
+      },
+      routingRules
+    });
+    
   } catch (error) {
     console.error('Failed to fetch routing rules:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch routing rules' },
-      { status: 500 }
-    );
+    return ApiResponseHelper.internalError('Failed to fetch routing rules');
   }
 }
 
@@ -29,36 +57,64 @@ export async function POST(
 ) {
   try {
     const { id } = params;
-    const body = await request.json();
-    const { name, condition, targetUrl, priority = 5 } = body;
-
-    if (!name || !condition || !targetUrl) {
-      return NextResponse.json(
-        { error: 'Name, condition, and target URL are required' },
-        { status: 400 }
-      );
+    const { rule }: { rule: Omit<SmartRoutingRule, 'id'> } = await request.json();
+    
+    // Validate rule
+    if (!rule.name || !rule.targetUrl) {
+      return ApiResponseHelper.badRequest('Rule name and target URL are required');
     }
 
-    const rule = await db.createRoutingRule({
-      id: crypto.randomUUID(),
-      qrCodeId: id,
-      name,
-      condition,
-      targetUrl,
-      priority,
-      isActive: true,
+    // Get current QR code
+    const qrCode = await prisma.qRCode.findUnique({
+      where: { id },
+      select: { qrOptions: true }
     });
 
-    return NextResponse.json({
-      success: true,
-      rule
+    if (!qrCode) {
+      return ApiResponseHelper.notFound('QR code not found');
+    }
+
+    // Parse existing options
+    let options: any = {};
+    if (qrCode.qrOptions) {
+      try {
+        options = JSON.parse(qrCode.qrOptions);
+      } catch (error) {
+        console.error('Failed to parse existing options:', error);
+      }
+    }
+
+    // Add new rule with generated ID
+    const newRule: SmartRoutingRule = {
+      ...rule,
+      id: generateRuleId(),
+      priority: rule.priority || 1,
+      isActive: rule.isActive !== undefined ? rule.isActive : true
+    };
+
+    // Update routing rules
+    if (!options.routingRules) {
+      options.routingRules = [];
+    }
+    options.routingRules.push(newRule);
+
+    // Save updated options
+    await prisma.qRCode.update({
+      where: { id },
+      data: {
+        qrOptions: JSON.stringify(options),
+        enableAI: true // Enable AI when rules are added
+      }
     });
+    
+    return ApiResponseHelper.success({
+      rule: newRule,
+      message: 'Routing rule created successfully'
+    });
+    
   } catch (error) {
     console.error('Failed to create routing rule:', error);
-    return NextResponse.json(
-      { error: 'Failed to create routing rule' },
-      { status: 500 }
-    );
+    return ApiResponseHelper.internalError('Failed to create routing rule');
   }
 }
 
@@ -68,35 +124,60 @@ export async function PUT(
 ) {
   try {
     const { id } = params;
-    const body = await request.json();
-    const { ruleId, ...updateData } = body;
-
-    if (!ruleId) {
-      return NextResponse.json(
-        { error: 'Rule ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const updatedRule = await db.updateRoutingRule(ruleId, id, updateData);
+    const { ruleId, updates }: { ruleId: string; updates: Partial<SmartRoutingRule> } = await request.json();
     
-    if (!updatedRule) {
-      return NextResponse.json(
-        { error: 'Rule not found' },
-        { status: 404 }
-      );
+    if (!ruleId) {
+      return ApiResponseHelper.badRequest('Rule ID is required');
     }
 
-    return NextResponse.json({
-      success: true,
-      rule: updatedRule
+    // Get current QR code
+    const qrCode = await prisma.qRCode.findUnique({
+      where: { id },
+      select: { qrOptions: true }
     });
+
+    if (!qrCode) {
+      return ApiResponseHelper.notFound('QR code not found');
+    }
+
+    // Parse existing options
+    let options: any = { routingRules: [] };
+    if (qrCode.qrOptions) {
+      try {
+        options = JSON.parse(qrCode.qrOptions);
+      } catch (error) {
+        console.error('Failed to parse existing options:', error);
+      }
+    }
+
+    // Find and update the rule
+    const ruleIndex = options.routingRules?.findIndex((rule: SmartRoutingRule) => rule.id === ruleId);
+    if (ruleIndex === -1 || ruleIndex === undefined) {
+      return ApiResponseHelper.notFound('Routing rule not found');
+    }
+
+    // Update the rule
+    options.routingRules[ruleIndex] = {
+      ...options.routingRules[ruleIndex],
+      ...updates
+    };
+
+    // Save updated options
+    await prisma.qRCode.update({
+      where: { id },
+      data: {
+        qrOptions: JSON.stringify(options)
+      }
+    });
+    
+    return ApiResponseHelper.success({
+      rule: options.routingRules[ruleIndex],
+      message: 'Routing rule updated successfully'
+    });
+    
   } catch (error) {
     console.error('Failed to update routing rule:', error);
-    return NextResponse.json(
-      { error: 'Failed to update routing rule' },
-      { status: 500 }
-    );
+    return ApiResponseHelper.internalError('Failed to update routing rule');
   }
 }
 
@@ -108,32 +189,54 @@ export async function DELETE(
     const { id } = params;
     const { searchParams } = new URL(request.url);
     const ruleId = searchParams.get('ruleId');
-
-    if (!ruleId) {
-      return NextResponse.json(
-        { error: 'Rule ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const deleted = await db.deleteRoutingRule(ruleId, id);
     
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'Rule not found' },
-        { status: 404 }
-      );
+    if (!ruleId) {
+      return ApiResponseHelper.badRequest('Rule ID is required');
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Rule deleted successfully'
+    // Get current QR code
+    const qrCode = await prisma.qRCode.findUnique({
+      where: { id },
+      select: { qrOptions: true }
     });
+
+    if (!qrCode) {
+      return ApiResponseHelper.notFound('QR code not found');
+    }
+
+    // Parse existing options
+    let options: any = { routingRules: [] };
+    if (qrCode.qrOptions) {
+      try {
+        options = JSON.parse(qrCode.qrOptions);
+      } catch (error) {
+        console.error('Failed to parse existing options:', error);
+      }
+    }
+
+    // Remove the rule
+    if (options.routingRules) {
+      options.routingRules = options.routingRules.filter((rule: SmartRoutingRule) => rule.id !== ruleId);
+    }
+
+    // Save updated options
+    await prisma.qRCode.update({
+      where: { id },
+      data: {
+        qrOptions: JSON.stringify(options)
+      }
+    });
+    
+    return ApiResponseHelper.success({
+      message: 'Routing rule deleted successfully'
+    });
+    
   } catch (error) {
     console.error('Failed to delete routing rule:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete routing rule' },
-      { status: 500 }
-    );
+    return ApiResponseHelper.internalError('Failed to delete routing rule');
   }
+}
+
+function generateRuleId(): string {
+  return 'rule_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }

@@ -8,30 +8,49 @@ import { useRouter } from 'next/navigation';
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'SMART' | 'GENIUS'>('FREE');
-  const { login } = useAuth();
+  const { register, login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+    
+    // Validation
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setIsLoading(false);
+      return;
+    }
     
     try {
-      // Create user account
-      const user = await login(email, name);
+      // Register user with password
+      const result = await register(email, password, name);
       
-      // Update plan if not free
-      if (selectedPlan !== 'FREE') {
-        // For now, just set the plan (in real app would handle payment first)
-        user.plan = selectedPlan;
+      if (!result.success) {
+        setError(result.error || 'Registration failed');
+        return;
       }
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // For now, plans are created as FREE and can be upgraded later
+      // In a real app, would handle payment for paid plans here
+      
+      // Redirect to login page with success message
+      router.push('/login?registered=true');
     } catch (error) {
       console.error('Signup error:', error);
-      alert('Error creating account. Please try again.');
+      setError('Error creating account. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +202,12 @@ export default function SignupPage() {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+              
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name
@@ -213,6 +238,38 @@ export default function SignupPage() {
                   placeholder="Enter your email address"
                 />
               </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                  placeholder="Create a secure password (8+ characters)"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                  placeholder="Confirm your password"
+                />
+              </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
@@ -234,7 +291,7 @@ export default function SignupPage() {
                     Creating Account...
                   </div>
                 ) : (
-                  `🚀 Start with ${plans.find(p => p.id === selectedPlan)?.name} Plan - FREE`
+                  '🚀 Create Your Account'
                 )}
               </button>
               

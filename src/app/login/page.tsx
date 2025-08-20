@@ -7,23 +7,36 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [usePassword, setUsePassword] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [error, setError] = useState('');
+  const { login, loginWithPassword } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
     try {
-      // Login user (for demo, just create/load account)
-      await login(email);
+      if (usePassword) {
+        // Password-based login
+        const result = await loginWithPassword(email, password);
+        if (!result.success) {
+          setError(result.error || 'Login failed');
+          return;
+        }
+      } else {
+        // Legacy email-only login
+        await login(email);
+      }
       
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
-      alert('Error logging in. Please try again.');
+      setError('Error logging in. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +91,39 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-8">
+            {/* Login Mode Toggle */}
+            <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setUsePassword(true)}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  usePassword
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                🔐 Secure Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setUsePassword(false)}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  !usePassword
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                📧 Email Only
+              </button>
+            </div>
+
             <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
+              
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address
@@ -96,6 +141,25 @@ export default function LoginPage() {
                 />
               </div>
 
+              {usePassword && (
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required={usePassword}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                    placeholder="Enter your password"
+                  />
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -107,7 +171,7 @@ export default function LoginPage() {
                     Signing In...
                   </div>
                 ) : (
-                  'Sign In'
+                  usePassword ? 'Sign In' : 'Continue with Email'
                 )}
               </button>
 
@@ -135,18 +199,37 @@ export default function LoginPage() {
                   Create free account
                 </Link>
               </div>
+              
+              {usePassword && (
+                <div className="text-center">
+                  <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-blue-500">
+                    Forgot your password?
+                  </Link>
+                </div>
+              )}
             </form>
           </div>
 
-          {/* Demo Benefits */}
+          {/* Login Info */}
           <div className="bg-blue-50 rounded-lg p-6">
-            <h3 className="font-semibold text-blue-900 mb-3">🎯 Try the Demo Account</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Pre-loaded with sample QR codes</li>
-              <li>• See AI insights in action</li>
-              <li>• Test smart routing features</li>
-              <li>• No signup required</li>
-            </ul>
+            <h3 className="font-semibold text-blue-900 mb-3">
+              {usePassword ? '🔐 Secure Authentication' : '🎯 Try the Demo Account'}
+            </h3>
+            {usePassword ? (
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Password-protected account access</li>
+                <li>• Secure session management</li>
+                <li>• Account lockout protection</li>
+                <li>• Enhanced security features</li>
+              </ul>
+            ) : (
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Pre-loaded with sample QR codes</li>
+                <li>• See AI insights in action</li>
+                <li>• Test smart routing features</li>
+                <li>• No signup required</li>
+              </ul>
+            )}
           </div>
 
           {/* Quick Info */}

@@ -1,14 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+// Enhanced Prisma client with performance optimizations
+import { prisma, DatabaseOptimizer, checkDatabaseHealth, performDatabaseCleanup } from './database-config';
 
-declare global {
-  var prisma: PrismaClient | undefined;
-}
-
-const prisma = globalThis.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
-
+// Export optimized database client and utilities
 export default prisma;
+export { DatabaseOptimizer, checkDatabaseHealth, performDatabaseCleanup };
 
 // Plan limits configuration
 export const PLAN_LIMITS = {

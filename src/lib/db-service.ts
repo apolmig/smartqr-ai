@@ -31,16 +31,8 @@ export class DatabaseService {
       console.log('Created new user:', newUser.id, 'with email:', newUser.email);
       return newUser;
     } catch (error) {
-      console.warn('Failed to ensure user, using fallback:', error);
-      // For demo purposes, return a mock user if database fails
-      const userEmail = email || `${userId}@demo.local`;
-      return {
-        id: 'demo-user',
-        email: userEmail,
-        name,
-        plan: 'FREE',
-        qrCodes: []
-      };
+      console.error('Failed to ensure user, database error:', error);
+      throw new Error(`Database connection failed: ${error.message}`);
     }
   }
 
@@ -55,8 +47,10 @@ export class DatabaseService {
     qrOptions?: any;
   }) {
     try {
+      console.log('createQRCode called for user:', userIdentifier);
       // Ensure user exists first
       const user = await this.ensureUser(userIdentifier, `User ${userIdentifier}`);
+      console.log('User ensured for QR creation:', user.id);
       
       // Check user's plan limits
       const userWithQRs = await prisma.user.findUnique({

@@ -135,13 +135,6 @@ export class DatabaseService {
       
       const qrCodes = await prisma.qRCode.findMany({
         where: { userId: user.id },
-        include: {
-          scans: {
-            orderBy: { scannedAt: 'desc' },
-            take: 10,
-          },
-          variants: true,
-        },
         orderBy: { createdAt: 'desc' },
       });
       

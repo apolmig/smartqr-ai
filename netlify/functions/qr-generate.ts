@@ -1,5 +1,5 @@
 import { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
-import { DatabaseService } from '../../src/lib/db-service';
+import { EnhancedDatabaseService } from '../../src/lib/enhanced-db-service';
 import { qrGenerator } from '../../src/lib/qr';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
@@ -31,7 +31,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       let qrCodes = [];
       try {
         console.log('Attempting to fetch QR codes for user:', userId);
-        qrCodes = await DatabaseService.getUserQRCodes(userId);
+        qrCodes = await EnhancedDatabaseService.getUserQRCodes(userId);
         console.log('Fetched QR codes:', qrCodes.length);
       } catch (dbError) {
         console.warn('Database fetch failed, returning empty array:', dbError);
@@ -160,11 +160,10 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
       try {
         console.log('Saving QR code to database...');
         
-        // Ensure user exists first
+        // Create QR code using enhanced service
         const finalUserId = userId || 'anonymous';
-        await DatabaseService.ensureUser(finalUserId, `User ${finalUserId}`);
         
-        const dbQRCode = await DatabaseService.createQRCode(finalUserId, {
+        const dbQRCode = await EnhancedDatabaseService.createQRCode(finalUserId, {
           name: qrData.name,
           targetUrl: qrData.targetUrl,
           enableAI: enableAI,
@@ -217,6 +216,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
             redirectUrl: `${process.env.URL || 'https://smartqr.es'}/r/${qrCode.shortId}`,
             scanCount: qrCode.totalScans || 0,
             createdAt: qrCode.createdAt instanceof Date ? qrCode.createdAt.toISOString() : qrCode.createdAt,
+          },
+          // Enhanced debugging information
+          debug: {
+            consistencyVerified: qrCode.consistencyVerified,
+            warnings: qrCode.warnings || [],
+            timestamp: new Date().toISOString()
           }
         }),
       };

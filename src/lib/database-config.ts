@@ -63,10 +63,14 @@ function buildOptimizedConnectionString(): string {
   // Add Neon-specific optimizations
   const params = new URLSearchParams(url.search);
   
-  // Connection pooling
+  // Neon-optimized connection pooling (as recommended by agent)
   params.set('pgbouncer', 'true');
-  params.set('connection_limit', DATABASE_CONFIG.connectionLimit.toString());
-  params.set('pool_timeout', '20');
+  params.set('connection_limit', '5'); // Reduced for serverless
+  params.set('pool_timeout', '30');
+  
+  // Additional Neon optimizations
+  params.set('connect_timeout', '10');
+  params.set('statement_timeout', '30000');
   
   // Performance tuning
   params.set('statement_timeout', '30s');

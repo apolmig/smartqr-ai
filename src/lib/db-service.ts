@@ -1,6 +1,22 @@
 import prisma, { getPlanLimits } from './prisma';
 import { generateShortId } from './utils';
 
+// Retry logic helper
+async function withRetry<T>(operation: () => Promise<T>, context = '', maxRetries = 3): Promise<T> {
+  const RETRY_DELAY = 200;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      if (i === maxRetries - 1) throw error;
+      console.warn(`Retry ${i + 1}/${maxRetries} for ${context}:`, error.message);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (i + 1)));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export class DatabaseService {
   // User operations
   static async ensureUser(userId: string, name: string, email?: string) {
@@ -81,23 +97,43 @@ export class DatabaseService {
         throw new Error('Failed to generate unique short ID');
       }
 
-      // Create QR code
-      return await prisma.qRCode.create({
-        data: {
-          name: data.name,
-          shortId,
-          targetUrl: data.targetUrl,
-          enableAI: data.enableAI || false,
-          qrStyle: data.qrStyle || 'classic',
-          qrColor: data.qrColor || '#000000',
-          qrSize: data.qrSize || 256,
-          qrOptions: data.qrOptions ? JSON.stringify(data.qrOptions) : null,
-          userId: user.id,
-        },
-        include: {
-          scans: true,
-        },
-      });
+      // Create QR code with retry and verification
+      const newQR = await withRetry(async () => {
+        return await prisma.qRCode.create({
+          data: {
+            name: data.name,
+            shortId,
+            targetUrl: data.targetUrl,
+            enableAI: data.enableAI || false,
+            qrStyle: data.qrStyle || 'classic',
+            qrColor: data.qrColor || '#000000',
+            qrSize: data.qrSize || 256,
+            qrOptions: data.qrOptions ? JSON.stringify(data.qrOptions) : null,
+            userId: user.id,
+          },
+          include: {
+            scans: true,
+          },
+        });
+      }, 'QR creation');
+
+      // Implement read-after-write consistency check
+      console.log('QR created, verifying consistency...');
+      await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+      
+      const verification = await withRetry(async () => {
+        return await prisma.qRCode.findUnique({
+          where: { shortId: newQR.shortId }
+        });
+      }, 'QR verification');
+      
+      if (!verification) {
+        console.error('QR verification failed - created QR not found immediately');
+        throw new Error('QR creation verification failed');
+      }
+      
+      console.log('QR creation verified successfully:', verification.id);
+      return newQR;
     } catch (error) {
       console.error('Error creating QR code:', error);
       throw error;
@@ -108,38 +144,59 @@ export class DatabaseService {
     try {
       console.log('getUserQRCodes called with identifier:', userIdentifier);
       
-      // Find all users and QR codes to debug
-      const allUsers = await prisma.user.findMany({
-        select: { id: true, email: true, name: true }
-      });
-      console.log('All users in database:', JSON.stringify(allUsers, null, 2));
+      // Ensure user exists BEFORE searching for QRs (as recommended)
+      const user = await this.ensureUser(userIdentifier, `User ${userIdentifier}`);
+      console.log('User ensured:', user.id, 'email:', user.email);
       
-      const allQRCodes = await prisma.qRCode.findMany({
-        select: { id: true, name: true, userId: true, shortId: true }
-      });
-      console.log('All QR codes in database:', JSON.stringify(allQRCodes, null, 2));
+      // Search QRs with retry logic and multiple attempts
+      let qrCodes: any[] = [];
+      let attempts = 0;
+      const maxAttempts = 3;
       
-      // Try to find user exactly as ensureUser does
-      const userEmail = `${userIdentifier}@demo.local`;
-      console.log('Looking for user with email:', userEmail);
-      
-      const user = await prisma.user.findUnique({
-        where: { email: userEmail },
-      });
-      
-      if (!user) {
-        console.log('No user found with email:', userEmail);
-        return [];
+      while (attempts < maxAttempts) {
+        try {
+          qrCodes = await withRetry(async () => {
+            return await prisma.qRCode.findMany({
+              where: { userId: user.id },
+              orderBy: { createdAt: 'desc' },
+            });
+          }, `QR fetch attempt ${attempts + 1}`);
+          
+          console.log(`Attempt ${attempts + 1}: Found ${qrCodes.length} QR codes for user ${user.id}`);
+          
+          // If we found QRs or this is the last attempt, break
+          if (qrCodes.length > 0 || attempts === maxAttempts - 1) {
+            break;
+          }
+          
+          // Wait before retry (eventual consistency)
+          await new Promise(resolve => setTimeout(resolve, 200));
+          attempts++;
+        } catch (error) {
+          console.error(`Attempt ${attempts + 1} failed:`, error);
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw error;
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
       }
       
-      console.log('Found user:', user.id, 'email:', user.email);
+      // Debug info if still empty
+      if (qrCodes.length === 0) {
+        console.log('No QRs found, debugging database state...');
+        
+        const allUsers = await prisma.user.findMany({
+          select: { id: true, email: true, name: true }
+        });
+        console.log('All users in database:', JSON.stringify(allUsers, null, 2));
+        
+        const allQRCodes = await prisma.qRCode.findMany({
+          select: { id: true, name: true, userId: true, shortId: true }
+        });
+        console.log('All QR codes in database:', JSON.stringify(allQRCodes, null, 2));
+      }
       
-      const qrCodes = await prisma.qRCode.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-      });
-      
-      console.log('QR codes found for user:', qrCodes.length);
       return qrCodes;
     } catch (error) {
       console.error('Error fetching user QR codes:', error);

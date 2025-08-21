@@ -1,6 +1,3 @@
-// Enhanced Prisma schema for AI-powered SmartQR System
-// Includes all performance optimizations and AI features
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,46 +8,32 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  image         String?
-  plan          String    @default("FREE") // FREE, SMART, GENIUS, ENTERPRISE
-  
-  // Security fields
-  passwordHash  String?   // For password-based auth
-  salt          String?   // Salt for password hashing
-  emailVerified Boolean   @default(false)
-  isActive      Boolean   @default(true)
-  loginAttempts Int       @default(0)
-  lockedUntil   DateTime?
-  lastLogin     DateTime?
-  
-  // Stripe billing
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  stripePriceId        String?
+  id                     String        @id @default(cuid())
+  email                  String        @unique
+  name                   String?
+  image                  String?
+  plan                   String        @default("FREE")
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
-  
-  // Plan limits
-  qrCodeLimit   Int       @default(3)
-  
-  // AI Usage tracking
-  aiUsageCount  Int       @default(0)
-  lastAIUsage   DateTime?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  // Relationships
-  accounts      Account[]
-  sessions      Session[]
-  userSessions  UserSession[]
-  qrCodes       QRCode[]
-  
+  qrCodeLimit            Int           @default(3)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  emailVerified          Boolean       @default(false)
+  isActive               Boolean       @default(true)
+  lastLogin              DateTime?
+  lockedUntil            DateTime?
+  loginAttempts          Int           @default(0)
+  passwordHash           String?
+  salt                   String?
+  accounts               Account[]
+  qrCodes                QRCode[]
+  sessions               Session[]
+  userSessions           UserSession[]
+
   @@index([email])
   @@index([lastLogin])
-  @@index([plan, aiUsageCount]) // AI usage analytics
   @@map("users")
 }
 
@@ -67,8 +50,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -85,312 +67,88 @@ model Session {
 }
 
 model UserSession {
-  id          String   @id @default(cuid())
-  userId      String
-  sessionId   String   @unique
-  token       String   @unique
-  ipAddress   String?
-  userAgent   String?
-  isActive    Boolean  @default(true)
-  expiresAt   DateTime
-  lastUsed    DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([token, isActive, expiresAt]) // Performance index
+  id        String   @id @default(cuid())
+  userId    String
+  sessionId String   @unique
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  isActive  Boolean  @default(true)
+  expiresAt DateTime
+  lastUsed  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([expiresAt])
+  @@index([token])
   @@map("user_sessions")
 }
 
 model QRCode {
-  id           String   @id @default(cuid())
-  name         String
-  shortId      String   @unique // Short identifier for the QR URL
-  targetUrl    String   // Current target URL
-  
-  // QR Customization
-  qrStyle      String   @default("classic") // Style preset name
-  qrColor      String   @default("#000000") // Primary color (dots)
-  qrSize       Int      @default(256)       // Size in pixels
-  qrOptions    String?  // JSON string for additional options
-  
-  // Smart features
-  isActive     Boolean  @default(true)
-  enableAI     Boolean  @default(false)
-  
-  // Enhanced Analytics
-  totalScans   Int      @default(0)
-  totalConversions Int  @default(0)
-  lastScanned  DateTime?
-  conversionRate Float? // Cached conversion rate
-  
-  // Performance metrics
-  averageResponseTime Int? // Average redirect time in ms
-  errorCount   Int      @default(0)
-  
-  // User relation
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Tracking relationships
-  scans        Scan[]
-  variants     QRVariant[]
-  routingDecisions RoutingDecision[]
-  conversions  Conversion[]
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  // Performance-optimized indexes
-  @@index([shortId]) // Critical redirect performance
-  @@index([shortId, isActive]) // Covering index for active QR redirects
-  @@index([userId, createdAt]) // User dashboard queries
-  @@index([isActive, totalScans]) // Analytics queries
-  @@index([lastScanned]) // Recent activity queries
-  @@index([enableAI, totalScans]) // AI-enabled QR performance
-  @@index([conversionRate]) // Conversion performance ranking
+  id          String      @id @default(cuid())
+  name        String
+  shortId     String      @unique
+  targetUrl   String
+  isActive    Boolean     @default(true)
+  enableAI    Boolean     @default(false)
+  totalScans  Int         @default(0)
+  lastScanned DateTime?
+  userId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  qrColor     String      @default("#000000")
+  qrOptions   String?
+  qrSize      Int         @default(256)
+  qrStyle     String      @default("classic")
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variants    QRVariant[]
+  scans       Scan[]
+
+  @@index([shortId, isActive])
+  @@index([userId, createdAt])
+  @@index([isActive, totalScans])
+  @@index([lastScanned])
   @@map("qr_codes")
 }
 
 model QRVariant {
-  id          String   @id @default(cuid())
-  qrCodeId    String
-  name        String
-  targetUrl   String
-  weight      Int      @default(50) // For A/B testing (0-100)
-  isActive    Boolean  @default(true)
-  
-  // A/B Testing enhanced metrics
-  totalScans  Int      @default(0)
-  conversions Int      @default(0)
-  conversionRate Float? // Cached conversion rate
-  
-  // Conditions for smart routing (JSON)
-  conditions  String?    // Store routing conditions as JSON
-  
-  // Performance tracking
-  averageResponseTime Int? // Average performance
-  successRate Float?   // Success rate 0-1
-  
-  qrCode      QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
-  scans       Scan[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([qrCodeId, isActive, weight]) // A/B testing queries
-  @@index([conversionRate]) // Performance ranking
+  id         String   @id @default(cuid())
+  qrCodeId   String
+  name       String
+  targetUrl  String
+  weight     Int      @default(50)
+  isActive   Boolean  @default(true)
+  conditions String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  qrCode     QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  scans      Scan[]
+
   @@map("qr_variants")
 }
 
 model Scan {
-  id           String     @id @default(cuid())
-  qrCodeId     String
-  variantId    String?    // Which variant was served
-  
-  // Enhanced Analytics data
-  userAgent    String?
-  ipAddress    String?    @db.VarChar(45) // Optimized for IPv4/IPv6
-  country      String?
-  city         String?
-  device       String?    // mobile, desktop, tablet
-  os           String?
-  browser      String?
-  
-  // AI insights and tracking
-  userSegment  String?    // Detected user segment
-  engagementScore Int?    // User engagement score
-  sessionDuration Int?    // Session duration in seconds
-  isReturningVisitor Boolean? // Whether user has visited before
-  
-  // Enhanced UTM and referrer tracking
-  referrer     String?    // Referrer URL
-  utmSource    String?    // UTM source parameter
-  utmMedium    String?    // UTM medium parameter
-  utmCampaign  String?    // UTM campaign parameter
-  
-  // Additional context stored as JSON
-  additionalData String? // JSON string for flexible data
-  
-  // Relationships
-  qrCode       QRCode     @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
-  variant      QRVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  conversion   Conversion?
-  
-  scannedAt    DateTime   @default(now())
-  
-  // High-performance indexes for AI workloads
-  @@index([qrCodeId, scannedAt]) // Time-series queries (most critical)
-  @@index([scannedAt]) // Date range analytics
-  @@index([device, scannedAt]) // Device analytics
-  @@index([country, scannedAt]) // Geographic analytics
-  @@index([qrCodeId, device, scannedAt]) // Composite analytics
-  @@index([userSegment, scannedAt]) // AI segmentation queries
-  @@index([utmSource, scannedAt]) // Campaign tracking
-  @@index([isReturningVisitor, scannedAt]) // User behavior analysis
-  @@index([qrCodeId, userSegment, scannedAt]) // AI performance tracking
+  id          String     @id @default(cuid())
+  qrCodeId    String
+  variantId   String?
+  userAgent   String?
+  ipAddress   String?    @db.VarChar(45)
+  country     String?
+  city        String?
+  device      String?
+  os          String?
+  browser     String?
+  userSegment String?
+  scannedAt   DateTime   @default(now())
+  qrCode      QRCode     @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  variant     QRVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([qrCodeId, scannedAt])
+  @@index([scannedAt])
+  @@index([device, scannedAt])
+  @@index([country, scannedAt])
+  @@index([qrCodeId, device, scannedAt])
   @@map("scans")
-}
-
-// AI User Profiles for Advanced Personalization
-model UserProfile {
-  id                  String   @id @default(cuid())
-  fingerprint         String   @unique // Browser fingerprint or user identifier
-  
-  // Behavioral data
-  totalVisits         Int      @default(1)
-  lastVisit           DateTime @default(now())
-  firstVisit          DateTime @default(now())
-  engagementScore     Int      @default(1)
-  averageSessionDuration Int   @default(0)
-  
-  // Preferences (inferred)
-  preferredDevice     String?
-  preferredTimeOfDay  Int?
-  preferredCountry    String?
-  
-  // Campaign attribution
-  firstSource         String?
-  lastSource          String?
-  conversionSource    String?
-  
-  // Segments and AI scoring
-  segments            String[] // Array of user segments
-  lifetimeValue       Decimal  @default(0) @db.Decimal(10,2)
-  churnRisk          Float?   // 0-1 churn probability
-  nextBestAction     String?  // AI recommendation
-  
-  // Custom attributes stored as JSON
-  customAttributes   String?  // JSON for flexible data
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
-  @@index([fingerprint, lastVisit])
-  @@index([engagementScore])
-  @@index([segments])
-  @@index([churnRisk])
-  @@map("user_profiles")
-}
-
-// AI Routing Decisions Log for Learning and Optimization
-model RoutingDecision {
-  id              String   @id @default(cuid())
-  qrCodeId        String
-  scanId          String?
-  
-  // Decision context
-  userFingerprint String?
-  device          String?
-  country         String?
-  timeOfDay       Int?
-  dayOfWeek       Int?
-  
-  // Routing result
-  originalUrl     String
-  selectedUrl     String
-  ruleId          String?  // Which rule was applied
-  ruleName        String?
-  confidence      Float    // Decision confidence 0-1
-  
-  // A/B Testing context
-  abTestId        String?
-  variantId       String?
-  
-  // Performance tracking
-  responseTime    Int?     // Response time in ms
-  successful      Boolean  @default(true)
-  errorMessage    String?  // If not successful
-  
-  qrCode         QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
-  
-  createdAt      DateTime @default(now())
-  
-  @@index([qrCodeId, createdAt])
-  @@index([ruleId, createdAt])
-  @@index([abTestId, variantId])
-  @@index([userFingerprint, createdAt])
-  @@index([successful, responseTime])
-  @@map("routing_decisions")
-}
-
-// Enhanced Conversion Tracking
-model Conversion {
-  id           String   @id @default(cuid())
-  qrCodeId     String
-  scanId       String   @unique
-  userId       String?  // If user is logged in
-  
-  // Conversion details
-  conversionType String  // 'purchase', 'signup', 'download', etc.
-  value          Decimal? @db.Decimal(10,2) // Monetary value
-  currency       String? @default("USD")
-  
-  // Attribution tracking
-  utmSource      String?
-  utmMedium      String?
-  utmCampaign    String?
-  device         String?
-  country        String?
-  
-  // Timing analysis
-  timeToConvert  Int?     // Seconds from scan to conversion
-  touchPoints    Int?     // Number of interactions before conversion
-  
-  // A/B testing attribution
-  variantId      String?
-  abTestId       String?
-  
-  // Additional data
-  metadata       String?  // JSON for additional conversion data
-  
-  qrCode        QRCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
-  scan          Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
-  
-  convertedAt   DateTime @default(now())
-  
-  @@index([qrCodeId, convertedAt])
-  @@index([conversionType, convertedAt])
-  @@index([utmSource, convertedAt])
-  @@index([device, convertedAt])
-  @@index([variantId, convertedAt])
-  @@index([value, convertedAt]) // Revenue tracking
-  @@map("conversions")
-}
-
-// High-Performance Analytics Cache
-model AnalyticsCache {
-  id              String   @id @default(cuid())
-  cacheKey        String   @unique // Unique key for the cached data
-  qrCodeId        String?
-  userId          String?
-  
-  // Cache metadata
-  dataType        String   // 'performance', 'insights', 'recommendations'
-  timeframe       String   // '24h', '7d', '30d', '90d'
-  parameters      String?  // JSON of additional parameters
-  
-  // Cached data
-  data            String   // JSON string of cached analytics
-  dataSize        Int?     // Size of data for monitoring
-  
-  // Cache control
-  expiresAt       DateTime
-  lastCalculated  DateTime @default(now())
-  calculationTime Int?     // Time taken to calculate in ms
-  hitCount        Int      @default(0) // Cache hit tracking
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@index([cacheKey, expiresAt])
-  @@index([qrCodeId, dataType, timeframe])
-  @@index([userId, dataType, timeframe])
-  @@index([expiresAt]) // For cleanup
-  @@index([lastCalculated, calculationTime]) // Performance monitoring
-  @@map("analytics_cache")
 }

@@ -4,6 +4,12 @@ import { aiEngine, UserContext } from '../../src/lib/ai-engine';
 import { getDeviceType, getBrowserName, getOSName } from '../../src/lib/utils';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  // Debug environment variables
+  console.log('Environment check:', {
+    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+    URL: process.env.URL ? 'SET' : 'NOT SET'
+  });
+
   console.log('QR redirect function called:', {
     path: event.path,
     method: event.httpMethod,

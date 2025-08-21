@@ -3,6 +3,13 @@ import { DatabaseService } from '../../src/lib/db-service';
 import { qrGenerator } from '../../src/lib/qr';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  // Debug environment variables
+  console.log('Environment check:', {
+    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+    URL: process.env.URL ? 'SET' : 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV
+  });
+
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {

@@ -1,7 +1,15 @@
 import { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
-import { DatabaseService } from '../../src/lib/db-service';
+import { EnhancedDatabaseService } from '../../src/lib/enhanced-db-service';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  // Debug environment variables
+  console.log('QR Delete environment check:', {
+    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+    DATABASE_HOST: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'none',
+    DATABASE_SEARCH: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).search : 'none',
+    timestamp: new Date().toISOString()
+  });
+
   console.log('QR Delete function called:', {
     httpMethod: event.httpMethod,
     queryStringParameters: event.queryStringParameters,
@@ -53,7 +61,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
 
     console.log('Attempting to delete QR code:', qrCodeId, 'for user:', userId);
 
-    await DatabaseService.deleteQRCode(qrCodeId, userId);
+    await EnhancedDatabaseService.deleteQRCode(qrCodeId, userId);
 
     return {
       statusCode: 200,

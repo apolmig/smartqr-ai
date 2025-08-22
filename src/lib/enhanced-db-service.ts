@@ -429,4 +429,61 @@ export class EnhancedDatabaseService {
       // Don't throw error to avoid breaking redirects
     }
   }
+
+  // Enhanced QR deletion with proper verification and cleanup
+  static async deleteQRCode(qrCodeId: string, userId: string) {
+    console.log(`🗑️  deleteQRCode called: qrCodeId=${qrCodeId}, userId=${userId}`);
+    
+    try {
+      // First, ensure user exists and get their actual database ID
+      const user = await this.ensureUser(userId, `User ${userId}`);
+      console.log(`✅ User verified for deletion: ${user.id}`);
+
+      // Verify the QR code exists and belongs to the user
+      const qrCode = await withRetry(async () => {
+        return await readClient.qRCode.findFirst({
+          where: {
+            id: qrCodeId,
+            userId: user.id,
+          },
+        });
+      }, `find-qr-for-deletion-${qrCodeId}`);
+
+      if (!qrCode) {
+        console.error(`❌ QR code not found or access denied: ${qrCodeId} for user ${user.id}`);
+        throw new Error('QR Code not found or access denied');
+      }
+
+      console.log(`✅ QR code verified for deletion: ${qrCode.shortId}`);
+
+      // Delete the QR code and all associated data using write client
+      await withRetry(async () => {
+        return await writeClient.$transaction(async (tx) => {
+          // Delete associated scans first
+          await tx.scan.deleteMany({
+            where: { qrCodeId: qrCodeId },
+          });
+
+          // Delete associated variants
+          await tx.qRVariant.deleteMany({
+            where: { qrCodeId: qrCodeId },
+          });
+
+          // Finally delete the QR code itself
+          await tx.qRCode.delete({
+            where: { id: qrCodeId },
+          });
+
+          console.log(`🗑️  Deleted QR code and all associated data: ${qrCodeId}`);
+        });
+      }, `delete-qr-${qrCodeId}`);
+
+      console.log(`✅ QR code deletion completed: ${qrCodeId}`);
+      return { success: true, message: 'QR Code deleted successfully' };
+
+    } catch (error: any) {
+      console.error(`❌ deleteQRCode failed for ${qrCodeId}:`, error.message);
+      throw error;
+    }
+  }
 }

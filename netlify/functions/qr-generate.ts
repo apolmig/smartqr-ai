@@ -4,11 +4,15 @@ import { qrGenerator } from '../../src/lib/qr';
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   // Debug environment variables
-  console.log('Environment check:', {
+  const envDebug = {
     DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+    DATABASE_HOST: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'none',
+    DATABASE_SEARCH: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).search : 'none',
     URL: process.env.URL ? 'SET' : 'NOT SET',
-    NODE_ENV: process.env.NODE_ENV
-  });
+    NODE_ENV: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  };
+  console.log('Environment check:', envDebug);
 
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -47,6 +51,7 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
         },
         body: JSON.stringify({
           success: true,
+          debug: envDebug,
           qrCodes: await Promise.all(qrCodes.map(async (qr) => {
             // Regenerate QR code image for each QR
             const redirectUrl = `${process.env.URL || 'https://smartqr.es'}/r/${qr.shortId}`;
@@ -249,4 +254,5 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     },
     body: JSON.stringify({ error: 'Method not allowed' }),
   };
-};
+};// Force redeploy Sat, Aug 23, 2025 12:37:34 AM
+console.log('Environment updated:', new Date().toISOString());

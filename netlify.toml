@@ -59,5 +59,4 @@
 # Environment variables (set these in Netlify dashboard)
 [context.production.environment]
   NEXT_TELEMETRY_DISABLED = "1"
-  DATABASE_URL = "postgresql://neondb_owner:npg_QEOTrxgk56Ua@ep-icy-block-a2ve4yeu-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connection_limit=5&pool_timeout=30"
   URL = "https://smartqr.es"

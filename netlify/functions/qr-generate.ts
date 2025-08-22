@@ -78,8 +78,9 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
                 ...(storedOptions || {})
               };
               
-              console.log('Regenerating QR with stored options:', regenerationOptions);
-              const qrData = await qrGenerator.generateQRCode(qr.name, redirectUrl, regenerationOptions);
+              console.log('Regenerating QR with stored options for target URL:', qr.targetUrl);
+              // FIX: Use actual targetUrl instead of redirectUrl so downloaded QR points directly to target
+              const qrData = await qrGenerator.generateQRCode(qr.name, qr.targetUrl, regenerationOptions);
               qrCodeDataUrl = qrData.qrCodeDataUrl;
             } catch (error) {
               console.error('Failed to regenerate QR for', qr.shortId, error);
